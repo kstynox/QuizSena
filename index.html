@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QuizSENA · Generador (1 archivo)</title>
 
-  <!-- UI (el generador) -->
+  <!-- UI -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" referrerpolicy="no-referrer" />
 
@@ -13,264 +13,495 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
-    /* Ajustes finos del generador (no depende de Tailwind) */
-    .glass { backdrop-filter: blur(10px); background: rgba(255,255,255,.78); }
-    .mono { font-variant-numeric: tabular-nums; }
+    :root{
+      --sena:#39A900;
+      --ink:#0f172a;
+      --muted:#64748b;
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --border:rgba(15, 23, 42, .08);
+      --shadow: 0 18px 60px rgba(15,23,42,.08);
+    }
+    body{ background: var(--bg); }
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:28px;
+      box-shadow: var(--shadow);
+    }
+    .soft{
+      border:1px solid rgba(15, 23, 42, .06);
+      background: rgba(255,255,255,.7);
+      box-shadow: 0 10px 30px rgba(15,23,42,.05);
+      backdrop-filter: blur(8px);
+    }
+    .btn-sena{
+      background: var(--sena);
+      color: white;
+    }
+    .btn-sena:hover{ filter: brightness(.95); }
+    .btn-ghost{
+      background:#fff;
+      border:1px solid rgba(15, 23, 42, .10);
+    }
+    .btn-ghost:hover{ background:#f8fafc; }
+
+    .dz{
+      border:2px dashed rgba(15,23,42,.12);
+      background: #f8fafc;
+      border-radius: 24px;
+      transition: .15s ease;
+    }
+    .dz:hover{
+      background:#f1f5f9;
+      border-color: rgba(57,169,0,.45);
+    }
+    .ring-sena{
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(57,169,0,.18);
+      border-color: rgba(57,169,0,.65) !important;
+    }
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      background:#0b1220;
+      color:#e5e7eb;
+      border-radius:10px;
+      padding:2px 8px;
+      font-weight:800;
+      font-size:12px;
+    }
+  
+    /* Anti-copia (best-effort) */
+    .no-select, .no-select * { -webkit-user-select: none; user-select: none; }
+    input, textarea { -webkit-user-select: text; user-select: text; }
+
+    /* Animaciones sutiles */
+    @keyframes qs-bounce {
+      0%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+      60% { transform: translateY(0); }
+      80% { transform: translateY(-2px); }
+    }
+    .qs-bounce { animation: qs-bounce 600ms ease; }
+    .qs-soft { transition: color .25s ease, transform .25s ease, background-color .25s ease, border-color .25s ease; }
+
+    /* Dropzone: compacto */
+    .dz { border: 2px dashed rgba(148,163,184,.45); border-radius: 24px; background: rgba(248,250,252,.85); }
+    @media (min-width: 1024px){
+      .dz { padding: 18px !important; }
+    }
+
   </style>
 </head>
 
-<body class="min-h-screen bg-slate-50 text-slate-900">
-  <!-- Header -->
-  <header class="sticky top-0 z-20 border-b border-slate-200 bg-white/80 glass">
-    <div class="mx-auto max-w-6xl px-4 py-4 flex items-center gap-3">
-      <div class="w-10 h-10 rounded-2xl bg-[#39A900] flex items-center justify-center shadow">
-        <i class="fa-solid fa-check-to-slot text-white"></i>
-      </div>
-      <div class="flex-1">
-        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h1 class="text-lg sm:text-xl font-extrabold tracking-tight">QuizSENA</h1>
-          <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Generador • 1 archivo HTML</span>
-        </div>
-        <p class="text-xs text-slate-500">Convierte un banco en Excel (.xlsx) en un examen HTML auto‑contenido (offline).</p>
-      </div>
-      <button id="btnReset" class="hidden sm:inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-bold">
-        <i class="fa-solid fa-rotate"></i> Reset
-      </button>
-    </div>
-  </header>
+<body class="text-slate-900">
+  <main class="mx-auto w-[92vw] max-w-none px-4 py-10">
+    <!-- Hero -->
+    <section class="text-center">
+      <img src="https://www.sena.edu.co/Style%20Library/alayout/images/logoSena.png" alt="Logo SENA" class="w-20 h-20 mx-auto mb-4" />
+      <h1 class="text-4xl sm:text-5xl font-black tracking-tight text-slate-900">
+        Quiz<span class="italic">SENA</span>
+      </h1>
+      <p class="mt-2 text-[11px] font-black text-slate-400 uppercase tracking-[0.35em]">
+        Generador de evaluaciones institucionales
+      </p>
+    </section>
 
-  <main class="mx-auto max-w-6xl px-4 py-8">
-    <!-- Top cards -->
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- Upload -->
-      <div class="lg:col-span-2 rounded-3xl border border-slate-200 bg-white shadow-sm p-6">
-        <div class="flex items-start justify-between gap-4">
-          <div>
-            <h2 class="text-base font-extrabold tracking-tight flex items-center gap-2">
-              <i class="fa-solid fa-file-excel text-[#39A900]"></i> Banco de preguntas (Excel)
-            </h2>
-            <p class="text-xs text-slate-500 mt-1">
-              Formato recomendado: Col A = Pregunta, Col B = Correctas (separadas por “;”), Col C… = Incorrectas.
-            </p>
+    <!-- Instructions + status -->
+    <section class="mt-10 card w-full p-7 sm:p-9">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        <div class="lg:col-span-2">
+          <div class="flex items-center gap-3">
+            <span class="w-8 h-8 rounded-2xl flex items-center justify-center" style="background:rgba(57,169,0,.12); color: var(--sena);">
+              <i class="fa-solid fa-circle-check"></i>
+            </span>
+            <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Instrucciones</h2>
           </div>
-          <div class="text-right">
-            <div class="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">Estado</div>
-            <div class="flex items-center justify-end gap-2 mt-1">
-              <span id="dotState" class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
-              <span id="txtState" class="text-sm font-extrabold">Sin archivo</span>
-            </div>
+          <ol class="mt-4 space-y-2 text-sm font-bold text-slate-600">
+            <li><span class="text-slate-400 font-black mr-2">1.</span> Seleccione un archivo Excel (<span class="font-black">.xlsx</span>).</li>
+            <li><span class="text-slate-400 font-black mr-2">2.</span> Defina los parámetros de rigor (items, opciones, temporizador, etc.).</li>
+            <li><span class="text-slate-400 font-black mr-2">3.</span> Descargue el examen como un único archivo <span class="font-black">HTML</span>.</li>
+          </ol>
+          <div class="mt-5 text-xs text-slate-500">
+            Atajos en el examen: <span class="kbd">1–9</span> selecciona opción • <span class="kbd">Enter</span> avanza.
           </div>
         </div>
 
-        <!-- Dropzone -->
-        <div id="dropzone" class="mt-5 rounded-3xl border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100/60 transition p-6 cursor-pointer">
-          <div class="flex flex-col sm:flex-row items-center gap-4">
-            <div class="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+        <div class="soft rounded-3xl p-6 flex flex-col items-center justify-center text-center">
+          <div class="text-[11px] font-black uppercase tracking-widest text-slate-400">Estado</div>
+          <div class="mt-3 flex items-center gap-2">
+            <span id="dotState" class="w-2.5 h-2.5 rounded-full bg-slate-300"></span>
+            <span id="txtState" class="text-sm font-black text-slate-700">Sin archivo</span>
+          </div>
+          <div class="mt-6">
+            <div id="topReady" class="text-5xl font-black leading-none text-slate-300">0</div>
+            <div class="mt-2 text-[11px] font-black uppercase tracking-widest text-slate-400">Items listos</div>
+          </div>
+
+          <button id="btnReset" class="mt-6 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl btn-ghost text-sm font-black w-full">
+            <i class="fa-solid fa-rotate"></i> Reset
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main grid -->
+    <section class="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- File card -->
+      <div class="card w-full p-7 sm:p-9">
+        <div class="flex items-center gap-3">
+          <span class="w-9 h-9 rounded-2xl flex items-center justify-center bg-emerald-50" style="color:var(--sena)">
+            <i class="fa-solid fa-file-excel"></i>
+          </span>
+          <h2 class="text-lg font-black tracking-tight">Archivo banco</h2>
+        </div>
+        <p class="mt-2 text-xs text-slate-500 font-semibold">
+          Formato: <b>Col A</b> = Pregunta, <b>Col B</b> = Correctas (separadas por “;”), <b>Col C…</b> = Incorrectas.
+        </p>
+
+        <div id="dropzone" class="dz mt-4 sm:mt-6 p-4 sm:p-6 cursor-pointer qs-soft">
+          <div class="flex flex-col items-center justify-center text-center">
+            <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-white border border-slate-200 flex items-center justify-center shadow-sm">
               <i id="dzIcon" class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400"></i>
             </div>
-            <div class="flex-1 text-center sm:text-left">
-              <div class="font-extrabold">Arrastra y suelta tu .xlsx aquí</div>
-              <div class="text-xs text-slate-500 mt-1">o haz clic para seleccionar un archivo.</div>
-              <div id="fileMeta" class="text-xs text-slate-600 mt-2 hidden">
-                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200">
-                  <i class="fa-solid fa-file-lines text-slate-500"></i>
-                  <span id="fileName" class="font-bold"></span>
-                </span>
-              </div>
+            <div class="mt-4">
+              <div class="text-sm font-black text-slate-800">Arrastra y suelta tu Excel</div>
+              <div class="mt-1 text-xs text-slate-500 font-semibold">o haz clic para seleccionar un archivo.</div>
             </div>
-            <div class="w-full sm:w-auto">
-              <label class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-[#39A900] hover:bg-[#2d8500] text-white font-extrabold shadow-sm cursor-pointer">
-                <i class="fa-solid fa-folder-open"></i> Seleccionar
-                <input id="fileInput" type="file" accept=".xlsx" class="hidden" />
-              </label>
+
+            <div id="fileMeta" class="mt-4 hidden">
+              <span class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-white border border-slate-200 text-xs font-black text-slate-700">
+                <i class="fa-solid fa-file-lines text-slate-500"></i>
+                <span id="fileName"></span>
+              </span>
             </div>
+
+            <label class="mt-5 inline-flex items-center gap-2 px-5 py-3 rounded-2xl btn-sena font-black text-sm cursor-pointer shadow active:scale-[0.99]">
+              <i class="fa-solid fa-folder-open"></i> Subir Excel
+              <input id="fileInput" type="file" accept=".xlsx" class="hidden" />
+            </label>
           </div>
 
-          <div id="progressRow" class="mt-5 hidden">
+          <div id="progressRow" class="mt-6 hidden">
             <div class="h-2 rounded-full bg-slate-200 overflow-hidden">
-              <div id="progressBar" class="h-2 bg-[#39A900] w-0 transition-all"></div>
+              <div id="progressBar" class="h-2" style="background:var(--sena); width:0%"></div>
             </div>
-            <div id="progressTxt" class="text-xs text-slate-500 mt-2">Procesando…</div>
+            <div id="progressTxt" class="text-xs text-slate-500 font-semibold mt-2">Procesando…</div>
           </div>
         </div>
 
-        <!-- Sheet + summary -->
-        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="md:col-span-1">
-            <label class="block text-[11px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">Hoja</label>
-            <select id="sheetSelect" class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900]" disabled>
+
+        <div class="mt-3 flex items-center justify-center">
+          <button id="btnDownloadSample" type="button" class="text-xs font-extrabold text-emerald-700 hover:text-emerald-800 underline underline-offset-4">
+            Descargar plantilla de ejemplo (.xlsx) con datos SENA
+          </button>
+        </div>
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <div class="text-[11px] font-black uppercase tracking-widest text-slate-400">Hoja</div>
+            <select id="sheetSelect" class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-black text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 disabled:opacity-60" disabled>
               <option value="">—</option>
             </select>
-            <p class="text-[11px] text-slate-500 mt-2">Se cargará la primera hoja por defecto.</p>
-          </div>
-          <div class="md:col-span-2 rounded-3xl border border-slate-200 bg-slate-50 p-4">
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div class="rounded-2xl bg-white border border-slate-200 p-3">
-                <div class="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">Total</div>
-                <div id="statTotal" class="text-xl font-extrabold mono mt-1">0</div>
-              </div>
-              <div class="rounded-2xl bg-white border border-slate-200 p-3">
-                <div class="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">Válidas</div>
-                <div id="statValid" class="text-xl font-extrabold mono mt-1">0</div>
-              </div>
-              <div class="rounded-2xl bg-white border border-slate-200 p-3">
-                <div class="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">Con alertas</div>
-                <div id="statWarn" class="text-xl font-extrabold mono mt-1">0</div>
-              </div>
-              <div class="rounded-2xl bg-white border border-slate-200 p-3">
-                <div class="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">Opc. promedio</div>
-                <div id="statOpts" class="text-xl font-extrabold mono mt-1">0</div>
-              </div>
-            </div>
-
-            <div class="mt-4 flex flex-wrap gap-2">
-              <button id="btnShowIssues" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-extrabold" disabled>
-                <i class="fa-solid fa-triangle-exclamation text-amber-600"></i> Ver validación
-              </button>
-              <button id="btnClearFile" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-extrabold" disabled>
-                <i class="fa-solid fa-xmark"></i> Quitar archivo
-              </button>
+            <div class="mt-3 rounded-2xl border border-slate-200 bg-white p-3">
+              <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Vista previa</div>
+              <div id="genPreviewQ" class="mt-2 text-sm font-black text-slate-900">—</div>
+              <div id="genPreviewOpts" class="mt-3 space-y-2"></div>
             </div>
           </div>
-        </div>
 
-        <!-- Preview -->
-        <div class="mt-6 rounded-3xl border border-slate-200 bg-white p-5">
-          <div class="flex items-center justify-between gap-4">
-            <h3 class="text-sm font-extrabold uppercase tracking-widest text-slate-400">Vista previa</h3>
-            <div class="text-xs text-slate-500">Se muestra la primera pregunta válida.</div>
-          </div>
-          <div id="previewBox" class="mt-4 rounded-2xl bg-slate-950 text-white p-5">
-            <div class="text-xs font-extrabold text-[#39A900] uppercase tracking-widest">Ejemplo</div>
-            <div id="previewQ" class="mt-2 text-base font-bold leading-snug">—</div>
-            <div id="previewOpts" class="mt-4 space-y-2"></div>
+          <div class="soft rounded-3xl p-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div class="rounded-2xl bg-white border border-slate-200 p-3">
+                <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Total</div>
+                <div id="statTotal" class="mt-1 text-2xl font-black text-slate-900">0</div>
+              </div>
+              <div class="rounded-2xl bg-white border border-slate-200 p-3">
+                <div class="text-[10px] font-black uppercase tracking-widest text-slate-400">Válidas</div>
+                <div id="statValid" class="mt-1 text-2xl font-black text-slate-900">0</div>
+              </div>
+            </div>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button id="btnShowIssues" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl btn-ghost text-xs font-black uppercase tracking-widest disabled:opacity-40" disabled>
+                <i class="fa-solid fa-triangle-exclamation text-amber-600"></i> Validación
+              </button>
+              <button id="btnClearFile" class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl btn-ghost text-xs font-black uppercase tracking-widest disabled:opacity-40" disabled>
+                <i class="fa-solid fa-xmark"></i> Quitar
+              </button>
+            </div>
+            <div class="mt-3 text-[11px] text-slate-500 font-semibold">
+              Máx items por examen: <span id="maxCount" class="font-black">0</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Config -->
-      <div class="rounded-3xl border border-slate-200 bg-white shadow-sm p-6">
-        <h2 class="text-base font-extrabold tracking-tight flex items-center gap-2">
-          <i class="fa-solid fa-sliders text-[#39A900]"></i> Configuración
-        </h2>
-        <p class="text-xs text-slate-500 mt-1">Estos parámetros se guardan localmente en tu navegador.</p>
+      <!-- Config card -->
+      <div class="card w-full p-7 sm:p-9">
+        <div class="flex items-center gap-3">
+          <span class="w-9 h-9 rounded-2xl flex items-center justify-center bg-emerald-50" style="color:var(--sena)">
+            <i class="fa-solid fa-sliders"></i>
+          </span>
+          <h2 class="text-lg font-black tracking-tight">Configuración</h2>
+        </div>
 
-        <div class="mt-5 space-y-4">
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-[11px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">Título</label>
-            <input id="cfgTitle" type="text" class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900]" />
+            <div class="text-[11px] font-black uppercase tracking-widest text-slate-400">Título</div>
+            <input id="cfgTitle" type="text" class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-black text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200" />
           </div>
-
           <div>
-            <label class="block text-[11px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">Instructor</label>
-            <input id="cfgInstructor" type="text" placeholder="Ej: JUAN PEREZ" class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900]" />
+            <div class="text-[11px] font-black uppercase tracking-widest text-slate-400">Instructor</div>
+            <input id="cfgInstructor" type="text" placeholder="Nombre completo" class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-black text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200" />
           </div>
+          <div>
+            <div class="text-[11px] font-black uppercase tracking-widest text-slate-400">Tema</div>
+            <input id="cfgTheme" type="text" placeholder="Ej: Excel" class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-black text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200" />
+          </div>
+          <div>
+            <div class="text-[11px] font-black uppercase tracking-widest text-slate-400">Items por examen</div>
+            <input id="cfgCount" type="number" min="1" class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-black text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200" />
+          </div>
+          <div>
+            <div class="text-[11px] font-black uppercase tracking-widest text-slate-400">Opciones</div>
+            <select id="cfgOptions" class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-black text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200">
+              <option value="4">4 opciones</option>
+              <option value="5">5 opciones</option>
+              <option value="6">6 opciones</option>
+            </select>
+          </div>
+        </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-[11px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">N° preguntas</label>
-              <input id="cfgCount" type="number" min="1" class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900]" />
-              <div class="text-[11px] text-slate-500 mt-2">Máx: <span id="maxCount" class="font-extrabold mono">0</span></div>
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <label class="soft rounded-3xl p-5 flex items-center gap-4 cursor-pointer select-none">
+            <input id="cfgTimer" type="checkbox" class="w-6 h-6 accent-emerald-600" />
+            <div class="flex-1">
+              <div class="text-sm font-black">Cronómetro</div>
+              <div class="text-xs text-slate-500 font-semibold">Tiempo total del examen.</div>
+              <div id="timerRow" class="mt-3 hidden items-center gap-2">
+                <input id="cfgTimeLimit" type="number" min="1" class="w-24 px-3 py-2 rounded-xl border border-slate-200 bg-white font-black text-sm focus:outline-none" />
+                <span class="text-xs text-slate-500 font-black">min</span>
+              </div>
             </div>
-            <div>
-              <label class="block text-[11px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">Opciones visibles</label>
-              <select id="cfgOptions" class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900]">
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-              </select>
-              <div class="text-[11px] text-slate-500 mt-2">Incluye correctas + incorrectas.</div>
+          </label>
+
+          <label class="soft rounded-3xl p-5 flex items-center gap-4 cursor-pointer select-none">
+            <input id="cfgSequential" type="checkbox" class="w-6 h-6 accent-emerald-600" />
+            <div class="flex-1">
+              <div class="text-sm font-black">Modo secuencial</div>
+              <div class="text-xs text-slate-500 font-semibold">Avance único (sin retroceso).</div>
+            </div>
+          </label>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <label class="soft rounded-3xl p-5 flex items-center gap-4 cursor-pointer select-none">
+            <input id="cfgLockResults" type="checkbox" class="w-6 h-6 accent-emerald-600" />
+            <div class="flex-1">
+              <div class="text-sm font-black">Ocultar resultados</div>
+              <div class="text-xs text-slate-500 font-semibold">Requiere PIN del instructor.</div>
+              <div id="pinRow" class="mt-3 hidden">
+                <div class="relative mt-2">
+  <input id="cfgPin" type="password" inputmode="numeric" maxlength="10" placeholder="PIN" class="mt-2 w-full pr-14 px-6 py-4 rounded-2xl border border-slate-200 bg-white font-black text-sm focus:outline-none focus:ring-4 focus:ring-green-100" />
+  <button id="btnToggleCfgPin" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 active:scale-95 flex items-center justify-center">
+    <i id="cfgPinEyeIcon" class="fa-solid fa-eye"></i>
+  </button>
+</div>
+<div class="mt-2 text-xs text-slate-500 font-black">4–10 dígitos</div>
+              </div>
+            </div>
+          </label>
+
+          <div class="soft rounded-3xl p-5">
+            <div class="text-[11px] font-black uppercase tracking-widest text-slate-400">Aleatoriedad</div>
+            <div class="mt-4 grid grid-cols-1 gap-3">
+              <label class="flex items-center gap-3 font-black text-sm cursor-pointer">
+                <input id="cfgShuffleQ" type="checkbox" class="w-5 h-5 accent-emerald-600" />
+                Barajar preguntas
+              </label>
+              <label class="flex items-center gap-3 font-black text-sm cursor-pointer">
+                <input id="cfgShuffleO" type="checkbox" class="w-5 h-5 accent-emerald-600" />
+                Barajar opciones
+              </label>
             </div>
           </div>
+        </div>
 
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-            <div class="flex items-start gap-3">
-              <input id="cfgTimer" type="checkbox" class="mt-1 w-5 h-5 accent-[#39A900]" />
-              <div class="flex-1">
-                <div class="font-extrabold text-sm">Temporizador global</div>
-                <div class="text-xs text-slate-500">Cuenta regresiva para todo el examen.</div>
-                <div id="timerRow" class="mt-2 hidden items-center gap-2">
-                  <input id="cfgTimeLimit" type="number" min="1" class="w-24 px-3 py-2 rounded-xl border border-slate-200 bg-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-[#39A900]/30 focus:border-[#39A900]" />
-                  <span class="text-xs text-slate-500 font-bold">minutos</span>
+        <div class="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <button id="btnPreview" class="inline-flex items-center justify-center gap-2 px-5 py-4 rounded-2xl btn-ghost font-black uppercase tracking-widest disabled:opacity-40" disabled>
+            <i class="fa-solid fa-eye"></i> Previsualizar
+          </button>
+          <button id="btnGenerate" class="inline-flex items-center justify-center gap-2 px-5 py-4 rounded-2xl btn-sena font-black uppercase tracking-widest shadow active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed" disabled>
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Generar examen
+          </button>
+        </div>
+
+        <p class="mt-4 text-xs text-slate-500 font-semibold">
+          El examen generado es un archivo HTML único. Incluye lógica y estilos, y puede funcionar sin servidor.
+        </p>
+      </div>
+    </section>
+
+    <!-- Footer (solo en el generador) -->
+  
+    <!-- Visor de resultados (para instructor) -->
+    <section class="mt-10 w-[92vw] max-w-none mx-auto">
+      <div class="rounded-[28px] border border-emerald-200 bg-emerald-50/50 shadow-sm p-6 w-full">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div class="text-sm font-black text-slate-900 tracking-tight">Visor de Resultados</div>
+            <div class="text-xs text-slate-500 font-semibold mt-1">Carga archivos <span class="font-black">.json</span> generados por los estudiantes para consolidar calificaciones.</div>
+          </div>
+          <div class="flex gap-2">
+            <button id="btnExportCSV" class="px-4 py-2 rounded-2xl border border-slate-200 bg-white font-black text-sm hover:bg-slate-50 disabled:opacity-60" disabled>
+              Exportar CSV
+            </button>
+            <button id="btnClearResults" class="px-4 py-2 rounded-2xl border border-slate-200 bg-white font-black text-sm hover:bg-slate-50 disabled:opacity-60" disabled>
+              Limpiar
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 lg:grid-cols-[1fr,2fr] gap-4">
+          <div class="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+            <div class="text-[11px] font-black uppercase tracking-widest text-slate-400">Cargar resultados</div>
+            <div class="mt-3">
+              <label class="block w-full">
+                <input id="resultsInput" type="file" accept=".json" multiple class="hidden" />
+                <div id="resultsDrop" class="dz p-4 cursor-pointer text-center qs-soft">
+                  <div class="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mx-auto shadow-sm">
+                    <i class="fa-solid fa-file-arrow-up text-slate-500"></i>
+                  </div>
+                  <div class="mt-3 text-sm font-black text-slate-800">Arrastra aquí los .json</div>
+                  <div class="mt-1 text-xs text-slate-500 font-semibold">o haz clic para seleccionarlos.</div>
                 </div>
-              </div>
-            </div>
-
-            <div class="flex items-start gap-3">
-              <input id="cfgSequential" type="checkbox" class="mt-1 w-5 h-5 accent-[#39A900]" />
-              <div class="flex-1">
-                <div class="font-extrabold text-sm">Modo secuencial</div>
-                <div class="text-xs text-slate-500">Muestra 1 pregunta a la vez (sin retroceder).</div>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 cursor-pointer select-none">
-                <input id="cfgShuffleQ" type="checkbox" class="w-5 h-5 accent-[#39A900]" />
-                <span class="text-sm font-extrabold">Barajar preguntas</span>
-              </label>
-              <label class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 cursor-pointer select-none">
-                <input id="cfgShuffleO" type="checkbox" class="w-5 h-5 accent-[#39A900]" />
-                <span class="text-sm font-extrabold">Barajar opciones</span>
               </label>
             </div>
+</div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            <button id="btnPreview" class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 font-extrabold" disabled>
-              <i class="fa-solid fa-eye"></i> Previsualizar
-            </button>
-            <button id="btnGenerate" class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-[#39A900] hover:bg-[#2d8500] text-white font-extrabold shadow-sm disabled:opacity-40 disabled:cursor-not-allowed" disabled>
-              <i class="fa-solid fa-wand-magic-sparkles"></i> Generar HTML
+          
+          <div class="mb-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
+            <div class="flex-1">
+              <div class="text-[11px] font-black uppercase tracking-widest text-slate-400">Buscar</div>
+              <input id="resultsSearch" type="text" placeholder="Filtrar por aprendiz, documento, tema, código, pin..."
+                class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-black text-sm focus:outline-none focus:ring-4 focus:ring-emerald-100" />
+            </div>
+            <button id="btnClearSearch" type="button"
+              class="h-[46px] px-4 rounded-2xl border border-slate-200 bg-white font-black text-sm hover:bg-slate-50">
+              Limpiar
             </button>
           </div>
-
-          <div class="text-[11px] text-slate-500 leading-relaxed">
-            El HTML generado no requiere internet: trae estilos y lógica embebidos.
+<div class="rounded-3xl border border-slate-200 bg-white overflow-hidden">
+            <div class="max-h-[360px] overflow-auto">
+              <table class="w-full text-sm">
+                <thead class="sticky top-0 bg-white border-b border-slate-200">
+                  
+                  <tr>
+                    <th class="text-left p-3 text-[11px] font-black uppercase tracking-widest text-slate-400">
+                      <button type="button" data-sort="studentName" class="inline-flex items-center gap-1 hover:text-slate-600">
+                        Aprendiz <span class="sortIcon text-slate-300">↕</span>
+                      </button>
+                    </th>
+                    <th class="text-left p-3 text-[11px] font-black uppercase tracking-widest text-slate-400">
+                      <button type="button" data-sort="studentId" class="inline-flex items-center gap-1 hover:text-slate-600">
+                        Documento <span class="sortIcon text-slate-300">↕</span>
+                      </button>
+                    </th>
+                    <th class="text-left p-3 text-[11px] font-black uppercase tracking-widest text-slate-400">
+                      <button type="button" data-sort="theme" class="inline-flex items-center gap-1 hover:text-slate-600">
+                        Tema <span class="sortIcon text-slate-300">↕</span>
+                      </button>
+                    </th>
+                    <th class="text-left p-3 text-[11px] font-black uppercase tracking-widest text-slate-400">
+                      <button type="button" data-sort="scoreVal" class="inline-flex items-center gap-1 hover:text-slate-600">
+                        Score <span class="sortIcon text-slate-300">↕</span>
+                      </button>
+                    </th>
+                    <th class="text-left p-3 text-[11px] font-black uppercase tracking-widest text-slate-400">
+                      <button type="button" data-sort="pctNum" class="inline-flex items-center gap-1 hover:text-slate-600">
+                        % <span class="sortIcon text-slate-300">↕</span>
+                      </button>
+                    </th>
+                    <th class="text-left p-3 text-[11px] font-black uppercase tracking-widest text-slate-400">
+                      <button type="button" data-sort="dateMs" class="inline-flex items-center gap-1 hover:text-slate-600">
+                        Fecha <span class="sortIcon text-slate-300">↕</span>
+                      </button>
+                    </th>
+                    <th class="text-left p-3 text-[11px] font-black uppercase tracking-widest text-slate-400">
+                      <button type="button" data-sort="verif" class="inline-flex items-center gap-1 hover:text-slate-600">
+                        Código <span class="sortIcon text-slate-300">↕</span>
+                      </button>
+                    </th>
+                    <th class="text-left p-3 text-[11px] font-black uppercase tracking-widest text-slate-400">
+                      <button type="button" data-sort="pin" class="inline-flex items-center gap-1 hover:text-slate-600">
+                        Pin <span class="sortIcon text-slate-300">↕</span>
+                      </button>
+                    </th>
+                    <th class="text-left p-3 text-[11px] font-black uppercase tracking-widest text-slate-400">
+                      <button type="button" data-sort="sigStatus" class="inline-flex items-center gap-1 hover:text-slate-600">
+                        Firma <span class="sortIcon text-slate-300">↕</span>
+                      </button>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="resultsTbody" class="[&>tr:nth-child(even)]:bg-slate-50">
+                  <tr><td colspan="9" class="p-4 text-slate-500 font-semibold">Sin resultados cargados.</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Modal: issues -->
-    <dialog id="issuesDialog" class="w-[min(900px,95vw)] rounded-3xl border border-slate-200 p-0 shadow-2xl">
-      <div class="p-5 border-b border-slate-200 bg-white">
-        <div class="flex items-center justify-between gap-4">
-          <div>
-            <div class="text-sm font-extrabold tracking-tight">Validación del banco</div>
-            <div class="text-xs text-slate-500 mt-1">Filas con problemas comunes y recomendaciones.</div>
-          </div>
-          <button id="btnCloseIssues" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-extrabold">
-            <i class="fa-solid fa-xmark"></i> Cerrar
-          </button>
+<footer class="mt-10 flex flex-col items-center">
+    <div class="w-full max-w-5xl">
+      <div class="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mb-2 text-center">DISEÑO Y DESARROLLO</div>
+      <div class="bg-white/95 backdrop-blur rounded-[999px] border border-slate-200 shadow-lg px-4 py-3 flex items-center gap-4">
+        <div class="w-11 h-11 rounded-full bg-orange-400 flex items-center justify-center text-white font-black text-xl select-none">×</div>
+        <div class="flex-1 min-w-0">
+          <div class="text-[10px] font-black uppercase tracking-widest text-slate-500">INSTRUCTOR DISEÑADOR</div>
+          <div id="footerInstructorName" class="font-black text-slate-900 truncate">—</div>
         </div>
+        <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-black select-none">⚙</div>
       </div>
-      <div class="p-5 bg-slate-50">
-        <div class="rounded-2xl border border-slate-200 bg-white overflow-hidden">
-          <div class="max-h-[55vh] overflow-auto">
-            <table class="w-full text-sm">
-              <thead class="sticky top-0 bg-white border-b border-slate-200">
-                <tr>
-                  <th class="text-left p-3 text-[11px] font-extrabold uppercase tracking-widest text-slate-400 w-20">Fila</th>
-                  <th class="text-left p-3 text-[11px] font-extrabold uppercase tracking-widest text-slate-400">Detalle</th>
-                  <th class="text-left p-3 text-[11px] font-extrabold uppercase tracking-widest text-slate-400 w-32">Tipo</th>
-                </tr>
-              </thead>
-              <tbody id="issuesTbody" class="[&>tr:nth-child(even)]:bg-slate-50"></tbody>
-            </table>
-          </div>
-        </div>
-        <div class="mt-4 text-xs text-slate-600">
-          Reglas: (1) Pregunta y correctas son obligatorias. (2) Debe haber al menos 1 opción incorrecta. (3) Correctas pueden ser múltiples separadas por “;”.
-        </div>
-      </div>
-    </dialog>
-
-    <!-- Footer -->
-    <footer class="mt-10 text-center text-slate-400">
-      <p class="text-[11px] font-extrabold uppercase tracking-[0.25em]">Servicio Nacional de Aprendizaje • SENA</p>
-    </footer>
+    </div>
+  </footer>
   </main>
+
+  <!-- Modal: issues -->
+  <dialog id="issuesDialog" class="w-[min(900px,95vw)] rounded-3xl border border-slate-200 p-0 shadow-2xl">
+    <div class="p-5 border-b border-slate-200 bg-white">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <div class="text-sm font-black tracking-tight">Validación del banco</div>
+          <div class="text-xs text-slate-500 mt-1 font-semibold">Filas con errores/advertencias y recomendaciones.</div>
+        </div>
+        <button id="btnCloseIssues" class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-black">
+          <i class="fa-solid fa-xmark"></i> Cerrar
+        </button>
+      </div>
+    </div>
+    <div class="p-5 bg-slate-50">
+      <div class="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+        <div class="max-h-[55vh] overflow-auto">
+          <table class="w-full text-sm">
+            <thead class="sticky top-0 bg-white border-b border-slate-200">
+              <tr>
+                <th class="text-left p-3 text-[11px] font-black uppercase tracking-widest text-slate-400 w-20">Fila</th>
+                <th class="text-left p-3 text-[11px] font-black uppercase tracking-widest text-slate-400">Detalle</th>
+                <th class="text-left p-3 text-[11px] font-black uppercase tracking-widest text-slate-400 w-32">Tipo</th>
+              </tr>
+            </thead>
+            <tbody id="issuesTbody" class="[&>tr:nth-child(even)]:bg-slate-50"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="mt-4 text-xs text-slate-600 font-semibold">
+        Reglas: (1) Pregunta y correctas son obligatorias. (2) Debe haber al menos 1 opción incorrecta. (3) Correctas pueden ser múltiples separadas por “;”.
+      </div>
+    </div>
+  </dialog>
 
   <script>
     "use strict";
@@ -278,7 +509,7 @@
     /** ============================
      *  Estado y utilidades
      *  ============================ */
-    const STORAGE_KEY = "quizsena_generator_v1";
+    const STORAGE_KEY = "quizsena_generator_v5";
 
     const state = {
       file: null,
@@ -286,18 +517,21 @@
       workbook: null,
       sheetName: null,
       rawRows: [],
-      questions: [],     // { pregunta, correctas[], incorrectas[] }
-      issues: [],        // { rowIndex, type, detail }
+      questions: [], // { pregunta, correctas[], incorrectas[] }
+      issues: [],    // { rowIndex, type, detail }
       config: {
-        title: "Evaluación de Aprendizaje SENA",
+        title: "EVALUACIÓN DE APRENDIZAJE",
         instructor: "",
+        theme: "",
         count: 10,
         optionsCount: 4,
         hasTimer: false,
         timeLimit: 30,
-        sequentialMode: true,
+        sequentialMode: false,
         shuffleQuestions: true,
-        shuffleOptions: true
+        shuffleOptions: true,
+        lockResults: false,
+        pin: ""
       }
     };
 
@@ -354,6 +588,21 @@
       return out;
     }
 
+    // 64-bit FNV-1a (BigInt)
+    function fnv1a64(str) {
+      let h = 0xcbf29ce484222325n;
+      const prime = 0x100000001b3n;
+      for (let i = 0; i < str.length; i++) {
+        h ^= BigInt(str.charCodeAt(i));
+        h = (h * prime) & 0xFFFFFFFFFFFFFFFFn;
+      }
+      return h;
+    }
+    function formatHash64(hex16) {
+      const s = String(hex16 || "").padStart(16, "0").toUpperCase();
+      return s.slice(0,4) + "-" + s.slice(4,8) + "-" + s.slice(8,12) + "-" + s.slice(12,16);
+    }
+
     function loadConfig() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -362,42 +611,41 @@
         if (parsed && typeof parsed === "object" && parsed.config) {
           state.config = { ...state.config, ...parsed.config };
         }
-      } catch (_) { /* ignore */ }
+      } catch (_) {}
     }
 
     function saveConfig() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ config: state.config }));
-      } catch (_) { /* ignore */ }
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ config: state.config })); } catch (_) {}
     }
 
     /** ============================
-     *  DOM: sincronización
+     *  DOM
      *  ============================ */
     const dom = {
       btnReset: $("btnReset"),
       fileInput: $("fileInput"),
       dropzone: $("dropzone"),
+      btnDownloadSample: $("btnDownloadSample"),
       dzIcon: $("dzIcon"),
       fileMeta: $("fileMeta"),
       fileName: $("fileName"),
       sheetSelect: $("sheetSelect"),
+      genPreviewQ: $("genPreviewQ"),
+      genPreviewOpts: $("genPreviewOpts"),
       dotState: $("dotState"),
       txtState: $("txtState"),
+      topReady: $("topReady"),
       progressRow: $("progressRow"),
       progressBar: $("progressBar"),
       progressTxt: $("progressTxt"),
       statTotal: $("statTotal"),
       statValid: $("statValid"),
-      statWarn: $("statWarn"),
-      statOpts: $("statOpts"),
       maxCount: $("maxCount"),
       btnShowIssues: $("btnShowIssues"),
       btnClearFile: $("btnClearFile"),
-      previewQ: $("previewQ"),
-      previewOpts: $("previewOpts"),
       cfgTitle: $("cfgTitle"),
       cfgInstructor: $("cfgInstructor"),
+      cfgTheme: $("cfgTheme"),
       cfgCount: $("cfgCount"),
       cfgOptions: $("cfgOptions"),
       cfgTimer: $("cfgTimer"),
@@ -406,6 +654,9 @@
       cfgSequential: $("cfgSequential"),
       cfgShuffleQ: $("cfgShuffleQ"),
       cfgShuffleO: $("cfgShuffleO"),
+      cfgLockResults: $("cfgLockResults"),
+      cfgPin: $("cfgPin"),
+      pinRow: $("pinRow"),
       btnPreview: $("btnPreview"),
       btnGenerate: $("btnGenerate"),
       issuesDialog: $("issuesDialog"),
@@ -413,75 +664,103 @@
       btnCloseIssues: $("btnCloseIssues")
     };
 
+    // Toggle visibility for instructor PIN input (generator)
+    const btnToggleCfgPin = document.getElementById("btnToggleCfgPin");
+    if (btnToggleCfgPin) {
+      btnToggleCfgPin.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const inp = document.getElementById("cfgPin");
+        const icon = document.getElementById("cfgPinEyeIcon");
+        if (!inp) return;
+        const showing = inp.type === "text";
+        inp.type = showing ? "password" : "text";
+        if (icon) icon.className = showing ? "fa-solid fa-eye" : "fa-solid fa-eye-slash";
+      });
+    }
+
     function setLoading(isLoading, msg) {
       dom.progressRow.classList.toggle("hidden", !isLoading);
-      dom.progressBar.style.width = isLoading ? "60%" : "0%";
       dom.progressTxt.textContent = msg || "Procesando…";
-      dom.dropzone.classList.toggle("opacity-70", isLoading);
+      if (!isLoading) dom.progressBar.style.width = "0%";
+      dom.dropzone.classList.toggle("opacity-80", isLoading);
       dom.dropzone.classList.toggle("pointer-events-none", isLoading);
     }
 
     function setStateBadge(ok, label) {
-      dom.dotState.className = "w-2.5 h-2.5 rounded-full " + (ok ? "bg-[#39A900] shadow-[0_0_8px_rgba(57,169,0,.6)]" : "bg-slate-300");
+      dom.dotState.className = "w-2.5 h-2.5 rounded-full " + (ok ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,.45)]" : "bg-slate-300");
       dom.txtState.textContent = label;
     }
 
-    function renderStats() {
-      const total = state.questions.length;
-      const valid = total; // ya filtradas
-      const warn = state.issues.length;
-
-      const avgOpts = total === 0 ? 0 : Math.round(
-        state.questions.reduce((acc, q) => acc + (q.correctas.length + q.incorrectas.length), 0) / total
-      );
-
-      dom.statTotal.textContent = String(state.rawRows.length);
-      dom.statValid.textContent = String(valid);
-      dom.statWarn.textContent = String(warn);
-      dom.statOpts.textContent = String(avgOpts);
-      dom.maxCount.textContent = String(valid);
-
-      // Ajustar cfgCount
-      const maxCount = Math.max(1, valid);
-      state.config.count = clampInt(state.config.count, 1, maxCount, Math.min(10, maxCount));
-      dom.cfgCount.value = String(state.config.count);
-
-      dom.btnShowIssues.disabled = warn === 0;
-      dom.btnClearFile.disabled = !state.file;
-      dom.btnGenerate.disabled = valid === 0;
-      dom.btnPreview.disabled = valid === 0;
-
-      dom.cfgCount.max = String(maxCount);
+    function countErrors(issues) {
+      return issues.filter(x => x.type === "ERROR").length;
     }
 
-    function renderPreview() {
+    function renderStats() {
+      const totalRows = state.rawRows.length;
+      const valid = state.questions.length;
+      const errors = countErrors(state.issues);
+
+      dom.statTotal.textContent = String(totalRows);
+      dom.statValid.textContent = String(valid);
+      dom.maxCount.textContent = String(valid);
+      dom.topReady.textContent = String(valid);
+
+      const maxCount = Math.max(1, valid || 1);
+      state.config.count = clampInt(state.config.count, 1, maxCount, Math.min(10, maxCount));
+      dom.cfgCount.value = String(state.config.count);
+      dom.cfgCount.max = String(maxCount);
+
+      dom.btnShowIssues.disabled = state.issues.length === 0;
+      dom.btnClearFile.disabled = !state.file;
+
+      const canGenerate = valid > 0 && errors === 0;
+      dom.btnGenerate.disabled = !canGenerate;
+      dom.btnPreview.disabled = !canGenerate;
+
+      if (!state.file) setStateBadge(false, "Sin archivo");
+      else if (valid === 0) setStateBadge(false, "Sin preguntas válidas");
+      else if (errors > 0) setStateBadge(false, "Errores en el banco");
+      else setStateBadge(true, "Listo");
+
+      renderGeneratorPreview();
+    }
+
+    
+    function renderGeneratorPreview() {
+      if (!dom.genPreviewQ || !dom.genPreviewOpts) return;
+
       const q = state.questions[0];
       if (!q) {
-        dom.previewQ.textContent = "—";
-        dom.previewOpts.innerHTML = "";
+        dom.genPreviewQ.textContent = "—";
+        dom.genPreviewOpts.innerHTML = "";
         return;
       }
-      dom.previewQ.textContent = q.pregunta;
 
-      // Mostrar 1 correcta + N incorrectas (solo vista previa)
+      dom.genPreviewQ.textContent = q.pregunta;
+
       const opts = [];
-      if (q.correctas[0]) opts.push({ text: q.correctas[0], isCorrect: true });
-      const neededIncorrect = Math.max(1, state.config.optionsCount - 1);
-      for (const inc of q.incorrectas.slice(0, neededIncorrect)) {
-        opts.push({ text: inc, isCorrect: false });
-      }
+      if (q.correctas && q.correctas[0]) opts.push({ t: q.correctas[0], ok: true });
 
-      dom.previewOpts.innerHTML = opts.map(o => `
-        <div class="bg-white/10 px-4 py-2 rounded-xl text-xs sm:text-[13px] font-bold border border-white/5 flex items-center gap-2">
-          <div class="w-3 h-3 rounded border border-white/20 ${o.isCorrect ? "bg-[#39A900]/60 border-[#39A900]" : ""}"></div>
-          <span>${escapeHtml(o.text)}</span>
+      const desired = clampInt(state.config.optionsCount, 2, 10, 4);
+      const needIncorrect = Math.max(1, desired - (q.correctas ? q.correctas.length : 1));
+      (q.incorrectas || []).slice(0, needIncorrect).forEach(x => opts.push({ t: x, ok: false }));
+
+      dom.genPreviewOpts.innerHTML = opts.map(o => `
+        <div class="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold">
+          <span class="mt-1 inline-block w-2.5 h-2.5 rounded-full ${o.ok ? "bg-emerald-600" : "bg-slate-300"}"></span>
+          <span>${escapeHtml(o.t)}</span>
         </div>
       `).join("");
     }
 
-    function syncConfigToDom() {
+function syncConfigToDom() {
       dom.cfgTitle.value = state.config.title;
       dom.cfgInstructor.value = state.config.instructor;
+      
+      const __f = document.getElementById("footerInstructorName");
+      if (__f) __f.textContent = (state.config.instructor || "").trim() || "—";
+dom.cfgTheme.value = state.config.theme;
       dom.cfgCount.value = String(state.config.count);
       dom.cfgOptions.value = String(state.config.optionsCount);
       dom.cfgTimer.checked = !!state.config.hasTimer;
@@ -491,11 +770,17 @@
       dom.cfgSequential.checked = !!state.config.sequentialMode;
       dom.cfgShuffleQ.checked = !!state.config.shuffleQuestions;
       dom.cfgShuffleO.checked = !!state.config.shuffleOptions;
+
+      dom.cfgLockResults.checked = !!state.config.lockResults;
+      dom.pinRow.classList.toggle("hidden", !state.config.lockResults);
+      dom.pinRow.classList.toggle("flex", !!state.config.lockResults);
+      dom.cfgPin.value = state.config.pin || "";
     }
 
     function readConfigFromDom() {
-      state.config.title = dom.cfgTitle.value.trim() || "Evaluación de Aprendizaje SENA";
+      state.config.title = dom.cfgTitle.value.trim() || "EVALUACIÓN DE APRENDIZAJE";
       state.config.instructor = dom.cfgInstructor.value.trim();
+      state.config.theme = dom.cfgTheme.value.trim();
       const maxCount = Math.max(1, state.questions.length || 1);
       state.config.count = clampInt(dom.cfgCount.value, 1, maxCount, Math.min(10, maxCount));
       state.config.optionsCount = clampInt(dom.cfgOptions.value, 2, 10, 4);
@@ -504,8 +789,13 @@
       state.config.sequentialMode = !!dom.cfgSequential.checked;
       state.config.shuffleQuestions = !!dom.cfgShuffleQ.checked;
       state.config.shuffleOptions = !!dom.cfgShuffleO.checked;
+
+      state.config.lockResults = !!dom.cfgLockResults.checked;
+      state.config.pin = (dom.cfgPin.value || "").trim();
+
       saveConfig();
-      renderPreview();
+      renderStats();
+          if (state.questions.length > 0) { dom.dzIcon.classList.add('qs-bounce'); setTimeout(()=>dom.dzIcon.classList.remove('qs-bounce'), 650); }
     }
 
     /** ============================
@@ -518,14 +808,13 @@
 
       const questions = [];
       state.rawRows.forEach((row, idx) => {
-        const rowNum = idx + 2; // + header row
+        const rowNum = idx + 2; // + encabezado
 
         const qText = String((row && row[0]) ?? "").trim();
         const correctCell = String((row && row[1]) ?? "").trim();
-
         const incorrectCells = (row || []).slice(2).map(v => String(v ?? "").trim()).filter(Boolean);
 
-        if (!qText && !correctCell && incorrectCells.length === 0) return; // fila vacía
+        if (!qText && !correctCell && incorrectCells.length === 0) return;
 
         if (!qText) {
           state.issues.push({ rowIndex: rowNum, type: "ERROR", detail: "Falta la pregunta (Col A)." });
@@ -548,9 +837,13 @@
           return;
         }
 
-        // Alertas (no bloqueantes)
+        // reglas de calidad
+        const dupCross = correctas.some(c => incorrectas.map(x => x.toLowerCase()).includes(c.toLowerCase()));
+        if (dupCross) {
+          state.issues.push({ rowIndex: rowNum, type: "WARN", detail: "Una correcta también aparece en incorrectas (revisar opciones duplicadas)." });
+        }
         const totalOpts = correctas.length + incorrectas.length;
-        if (totalOpts < 3) {
+        if (totalOpts < 4) {
           state.issues.push({ rowIndex: rowNum, type: "WARN", detail: "Muy pocas opciones (recomendado: 4 o más)." });
         }
         if (correctas.length > 1) {
@@ -574,7 +867,7 @@
       dom.sheetSelect.disabled = wb.SheetNames.length === 0;
     }
 
-    async function loadFile(file) {
+    function loadFileWithProgress(file) {
       state.file = file;
       state.fileName = file?.name || null;
       state.workbook = null;
@@ -585,63 +878,72 @@
 
       dom.fileMeta.classList.toggle("hidden", !file);
       dom.fileName.textContent = file ? file.name : "";
-      dom.dzIcon.className = "fa-solid fa-circle-notch fa-spin text-2xl text-[#39A900]";
-      setStateBadge(false, "Procesando…");
+      dom.dzIcon.className = "fa-solid fa-circle-notch fa-spin text-2xl";
+      dom.dzIcon.style.color = "var(--sena)";
 
       setLoading(true, "Leyendo Excel…");
+      dom.progressBar.style.width = "0%";
 
-      try {
-        const buf = await file.arrayBuffer();
-        dom.progressBar.style.width = "80%";
-        dom.progressTxt.textContent = "Analizando hojas…";
+      const reader = new FileReader();
 
-        const wb = XLSX.read(buf, { type: "array" });
-        state.workbook = wb;
-        populateSheetSelect(wb);
+      reader.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.max(0, Math.min(100, Math.round((e.loaded / e.total) * 100)));
+          dom.progressBar.style.width = pct + "%";
+          dom.progressTxt.textContent = "Leyendo archivo… " + pct + "%";
+        }
+      };
 
-        state.sheetName = wb.SheetNames[0] || null;
-        dom.sheetSelect.value = state.sheetName || "";
-
-        dom.progressBar.style.width = "95%";
-        dom.progressTxt.textContent = "Construyendo preguntas…";
-
-        if (!state.sheetName) throw new Error("No se encontraron hojas en el archivo.");
-
-        const ws = wb.Sheets[state.sheetName];
-        parseSheetToQuestions(ws);
-
-        // Ajuste count al máximo
-        const maxCount = Math.max(1, state.questions.length || 1);
-        state.config.count = clampInt(state.config.count, 1, maxCount, Math.min(10, maxCount));
-
-        setStateBadge(state.questions.length > 0, state.questions.length > 0 ? "Banco cargado" : "Sin preguntas válidas");
-        dom.dotState.classList.toggle("bg-amber-500", state.questions.length === 0);
-
-        dom.dzIcon.className = state.questions.length > 0
-          ? "fa-solid fa-check text-2xl text-[#39A900]"
-          : "fa-solid fa-triangle-exclamation text-2xl text-amber-600";
-
-      } catch (err) {
-        console.error(err);
-        alert("Error al procesar el archivo Excel. Verifica el formato y reintenta.");
+      reader.onerror = () => {
+        alert("Error leyendo el archivo. Intenta nuevamente.");
         clearFile();
-        return;
-      } finally {
-        setLoading(false);
-        renderStats();
-        renderPreview();
-      }
+      };
+
+      reader.onload = () => {
+        try {
+          dom.progressBar.style.width = "100%";
+          dom.progressTxt.textContent = "Procesando hojas…";
+
+          const buf = reader.result;
+          const wb = XLSX.read(buf, { type: "array" });
+          state.workbook = wb;
+
+          populateSheetSelect(wb);
+          state.sheetName = wb.SheetNames[0] || null;
+          dom.sheetSelect.value = state.sheetName || "";
+
+          if (!state.sheetName) throw new Error("No se encontraron hojas.");
+
+          dom.progressTxt.textContent = "Construyendo preguntas…";
+          parseSheetToQuestions(wb.Sheets[state.sheetName]);
+
+          // Ajuste count
+          const maxCount = Math.max(1, state.questions.length || 1);
+          state.config.count = clampInt(state.config.count, 1, maxCount, Math.min(10, maxCount));
+
+        } catch (err) {
+          console.error(err);
+          alert("Error al procesar el Excel. Verifica el formato y reintenta.");
+          clearFile();
+          return;
+        } finally {
+          setLoading(false);
+          dom.dzIcon.className = state.questions.length > 0 ? "fa-solid fa-check text-2xl" : "fa-solid fa-triangle-exclamation text-2xl";
+          dom.dzIcon.style.color = state.questions.length > 0 ? "var(--sena)" : "#d97706";
+          renderStats();
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
     }
 
     function reloadSelectedSheet() {
       if (!state.workbook || !state.sheetName) return;
-      const ws = state.workbook.Sheets[state.sheetName];
-      parseSheetToQuestions(ws);
+      parseSheetToQuestions(state.workbook.Sheets[state.sheetName]);
+
       const maxCount = Math.max(1, state.questions.length || 1);
       state.config.count = clampInt(state.config.count, 1, maxCount, Math.min(10, maxCount));
       renderStats();
-      renderPreview();
-      setStateBadge(state.questions.length > 0, state.questions.length > 0 ? "Banco cargado" : "Sin preguntas válidas");
     }
 
     function clearFile() {
@@ -657,24 +959,54 @@
       dom.sheetSelect.innerHTML = '<option value="">—</option>';
       dom.sheetSelect.disabled = true;
       dom.dzIcon.className = "fa-solid fa-cloud-arrow-up text-2xl text-slate-400";
-      setStateBadge(false, "Sin archivo");
+      dom.dzIcon.style.color = "";
       renderStats();
-      renderPreview();
+    }
+
+    function downloadSampleExcel() {
+      try {
+        const header = ["Pregunta", "Correctas", "Incorrecta 1", "Incorrecta 2", "Incorrecta 3", "Incorrecta 4"];
+        const rows = [
+          header,
+          ["¿Qué significa SENA?", "Servicio Nacional de Aprendizaje", "Sistema Nacional de Empleo y Aprendizaje", "Servicio Nacional Educativo", "Sistema Nacional de Aprendizaje", "Servicio de Educación Nacional"],
+          ["Color institucional del SENA (principal)", "#39A900", "#00AEEF", "#FF0000", "#111827", "#FFFFFF"],
+          ["¿Cuál es el propósito central del SENA?", "Formación profesional integral", "Vender servicios educativos privados", "Otorgar títulos universitarios", "Administrar impuestos", "Regular el tránsito"],
+          ["Seleccione DOS características del aprendizaje en el SENA", "Teórico-práctico; Enfoque por competencias", "Solo teórico", "Solo memorístico", "Sin evaluación", "Exclusivo virtual"],
+          ["Un ambiente de formación debe priorizar…", "Seguridad y buenas prácticas", "Riesgo sin control", "Improvisación", "Ausencia de evidencias", "Sin normas"],
+          ["En una evaluación tipo test, una pregunta con múltiples correctas requiere…", "Marcar todas las correctas y ninguna incorrecta", "Marcar una sola al azar", "Marcar todas las opciones", "No responder", "Responder en blanco"],
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        // Anchos sugeridos
+        ws["!cols"] = [
+          { wch: 55 },
+          { wch: 35 },
+          { wch: 28 },
+          { wch: 28 },
+          { wch: 28 },
+          { wch: 28 },
+        ];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Banco");
+        XLSX.writeFile(wb, "Plantilla_QuizSENA_Ejemplo.xlsx");
+      } catch (e) {
+        console.error(e);
+        alert("No se pudo generar la plantilla. Intenta nuevamente.");
+      }
     }
 
     /** ============================
-     *  Modal de issues
+     *  Modal issues
      *  ============================ */
     function openIssues() {
       dom.issuesTbody.innerHTML = state.issues.map(x => {
         const badge = x.type === "ERROR"
-          ? '<span class="inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-extrabold bg-rose-50 text-rose-700 border border-rose-200">ERROR</span>'
+          ? '<span class="inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-black bg-rose-50 text-rose-700 border border-rose-200">ERROR</span>'
           : x.type === "WARN"
-            ? '<span class="inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200">WARN</span>'
-            : '<span class="inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-extrabold bg-slate-50 text-slate-700 border border-slate-200">INFO</span>';
+            ? '<span class="inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-black bg-amber-50 text-amber-700 border border-amber-200">WARN</span>'
+            : '<span class="inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-black bg-slate-50 text-slate-700 border border-slate-200">INFO</span>';
         return `
           <tr class="border-b border-slate-100">
-            <td class="p-3 font-extrabold mono">${x.rowIndex}</td>
+            <td class="p-3 font-black">${x.rowIndex}</td>
             <td class="p-3">${escapeHtml(x.detail)}</td>
             <td class="p-3">${badge}</td>
           </tr>
@@ -686,36 +1018,54 @@
     }
 
     /** ============================
-     *  Generación del HTML del examen (offline)
+     *  Generación del HTML del examen
      *  ============================ */
-    
-    function buildQuizData() {
+    function buildQuizPack(evStamp) {
       readConfigFromDom();
 
-      // Exportar TODO el banco válido (para que cada intento pueda seleccionar aleatoriamente)
-      const questions = state.questions.map(q => ({
+      // Bloquear si hay errores en el banco
+      const errors = (state.issues || []).reduce((acc, it) => acc + ((it && it.type === "ERROR") ? 1 : 0), 0);
+      if (errors > 0) {
+        alert("Hay errores en el banco (ERROR). Corrígelos antes de generar el examen.");
+        return null;
+      }
+
+      const bank = (state.questions || []).map((q, __i) => ({
+        __i,
         pregunta: q.pregunta,
-        correctas: q.correctas.slice(),
-        incorrectas: q.incorrectas.slice()
+        correctas: Array.isArray(q.correctas) ? q.correctas.slice() : [],
+        incorrectas: Array.isArray(q.incorrectas) ? q.incorrectas.slice() : []
       }));
 
+      const maxCount = Math.max(1, bank.length || 1);
+      const count = clampInt(state.config.count, 1, maxCount, Math.min(10, maxCount));
+
+      const pin = (state.config.pin || "").trim();
+      const lockResults = !!state.config.lockResults && pin.length >= 4;
+      const pinHash = lockResults ? fnv1a64("PIN|" + pin).toString(16).padStart(16, "0").toUpperCase() : "";
+
       return {
-        QUESTIONS_DATA: questions,
         CONFIG_DATA: {
           title: state.config.title,
           instructor: state.config.instructor,
-          count: clampInt(state.config.count, 1, Math.max(1, questions.length), Math.min(10, Math.max(1, questions.length))),
-          optionsCount: clampInt(state.config.optionsCount, 2, 10, 4),
-          hasTimer: !!state.config.hasTimer,
-          timeLimit: clampInt(state.config.timeLimit, 1, 999, 30),
-          sequentialMode: !!state.config.sequentialMode,
-          shuffleQuestions: !!state.config.shuffleQuestions,
-          shuffleOptions: !!state.config.shuffleOptions
-        }
+          theme: state.config.theme,
+          evStamp: String(evStamp || ""),
+          regionLine1: "SENA Regional Tolima",
+          regionLine2: "Centro de Comercio y Servicios",
+          count,
+          optionsCount: state.config.optionsCount,
+          hasTimer: state.config.hasTimer,
+          timeLimit: state.config.timeLimit,
+          sequentialMode: state.config.sequentialMode,
+          shuffleQuestions: state.config.shuffleQuestions,
+          shuffleOptions: state.config.shuffleOptions,
+          lockResults,
+          pinHash,
+          generatedAt: new Date().toISOString()
+        },
+        QUESTIONS_BANK: bank
       };
     }
-
-
 
     function generateQuizHtml(quizPack) {
       const SCR = "<scr" + "ipt";
@@ -724,20 +1074,33 @@
       const cfg = quizPack.CONFIG_DATA || {};
       const title = escapeHtml(cfg.title || "EVALUACIÓN DE APRENDIZAJE");
       const instructor = escapeHtml(cfg.instructor || "");
+      const theme = escapeHtml(cfg.theme || "");
       const count = clampInt(cfg.count, 1, 999999, 10);
-      const optionsCount = clampInt(cfg.optionsCount, 2, 10, 4);
-      const hasTimer = !!cfg.hasTimer;
-      const timeLimit = clampInt(cfg.timeLimit, 1, 999, 30);
-      const sequentialMode = !!cfg.sequentialMode;
-      const shuffleQuestions = !!cfg.shuffleQuestions;
-      const shuffleOptions = !!cfg.shuffleOptions;
+      const lockResults = !!cfg.lockResults;
+      const pinHash = escapeHtml(cfg.pinHash || "");
 
-      const questionsJson = JSON.stringify(quizPack.QUESTIONS_DATA || []).replaceAll("</", "<\\/");
-      const configJson = JSON.stringify({
-        title: cfg.title || "EVALUACIÓN DE APRENDIZAJE",
-        instructor: cfg.instructor || "",
-        count, optionsCount, hasTimer, timeLimit, sequentialMode, shuffleQuestions, shuffleOptions
-      }).replaceAll("</", "<\\/");
+      const timerBlock = cfg.hasTimer ? `
+        <div class="flex flex-col items-center gap-3">
+          <div class="relative w-24 h-24">
+            <svg class="transform -rotate-90 w-24 h-24">
+              <circle cx="48" cy="48" r="42" stroke="#e2e8f0" stroke-width="10" fill="none"></circle>
+              <circle id="timerCircle" cx="48" cy="48" r="42" stroke="#39A900" stroke-width="10" fill="none"
+                stroke-dasharray="264" stroke-dashoffset="0" stroke-linecap="round"></circle>
+            </svg>
+            <div class="absolute inset-0 flex items-center justify-center">
+              <p id="timerText" class="text-xl font-black text-slate-900">00:00</p>
+            </div>
+          </div>
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tiempo restante</p>
+        </div>
+      ` : `
+        <div class="flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-50 border border-slate-100">
+          <i class="fa-solid fa-timer text-slate-400"></i>
+          <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sin cronómetro</span>
+        </div>
+      `;
+
+      const dataJson = JSON.stringify(quizPack).replaceAll("</", "<\\/");
 
       return `<!DOCTYPE html>
 <html lang="es">
@@ -747,124 +1110,167 @@
   <title>${title}</title>
 
   ${SCR} src="https://cdn.tailwindcss.com">${ESCR}
+  ${SCR} src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js">${ESCR}
   ${SCR} src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">${ESCR}
+  ${SCR} src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js">${ESCR}
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
+
+    /* Transiciones suaves entre preguntas */
+    @keyframes qs-qfade { 0% { opacity: 0; transform: translateY(8px) scale(.96); } 65% { opacity: 1; transform: translateY(0) scale(1.03); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+    .qs-qfade { animation: qs-qfade 220ms ease both; }
+    .qs-opt { animation: qs-qfade 220ms ease both; }
+
+    /* Toast */
+    .qs-toast{
+      position: fixed; left: 50%; transform: translateX(-50%);
+      bottom: 18px; z-index: 9999;
+      background: rgba(15,23,42,.92); color: #fff;
+      border: 1px solid rgba(148,163,184,.35);
+      padding: 10px 14px; border-radius: 999px;
+      font-weight: 900; font-size: 12px; letter-spacing: .04em;
+      box-shadow: 0 16px 40px rgba(0,0,0,.22);
+      max-width: min(92vw, 720px);
+      display: none;
+    }
     @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
     body { font-family: 'Montserrat', sans-serif; }
     .sena-bg { background-color: #39A900; }
     .sena-text { color: #39A900; }
-    .option-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-    .selected-option { border-color: #39A900 !important; background-color: #f0fdf4 !important; }
-
-    /* Scrollbar */
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #39A900; border-radius: 10px; }
-
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    .animate-fade { animation: fadeIn 0.4s ease-out forwards; }
-
-    /* Cronómetro Circular */
-    .timer-container { position: relative; width: 60px; height: 60px; background: white; border-radius: 50%; padding: 2px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    .timer-svg { transform: rotate(-90deg); width: 56px; height: 56px; }
-    .timer-bg { fill: none; stroke: #f1f5f9; stroke-width: 5; }
-    .timer-progress { fill: none; stroke: #39A900; stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
-
-    /* Paginación */
-    .page-dot {
-      width: 36px; height: 36px;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 12px; font-weight: 900; font-size: 12px;
-      cursor: pointer; transition: all 0.2s;
-      border: 2px solid transparent;
-    }
-    .page-dot.active { background-color: #39A900; color: white; transform: scale(1.1); box-shadow: 0 4px 12px rgba(57,169,0,0.3); }
-    .page-dot.answered { border-color: #39A900; color: #39A900; background-color: #f0fdf4; }
-    .page-dot.pending { background-color: #f8fafc; color: #cbd5e1; border-color: #f1f5f9; }
+    .option-btn { transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1); }
+    .option-btn:active { transform: scale(0.99); }
+    .selected-option { border-color: #39A900 !important; background-color: rgba(57, 169, 0, 0.05) !important; }
+    .correct-answer { background-color: rgba(34, 197, 94, .12) !important; border-color: rgba(34,197,94,.45) !important; }
+    .wrong-answer { background-color: rgba(244, 63, 94, .10) !important; border-color: rgba(244,63,94,.35) !important; }
+    .animate-fade { animation: fadeIn .22s ease both; }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(6px);} to { opacity:1; transform: translateY(0);} }
+    .page-dot { width: 12px; height: 12px; border-radius: 999px; border: 2px solid #cbd5e1; transition: .15s; cursor: pointer; }
+    .page-dot.active { background:#39A900; border-color:#39A900; transform: scale(1.15); }
+    .filter-btn.active { background: #39A900; color: #fff; border-color: #39A900; }
   </style>
 </head>
 
-<body class="bg-slate-50 min-h-screen flex items-center justify-center p-4">
-  <div id="quiz-app" class="max-w-2xl w-full bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] overflow-hidden border border-slate-100">
+<body class="bg-slate-50 min-h-screen pb-28 flex items-center justify-center p-4">
+  <div id="quiz-app" class="max-w-3xl w-full bg-white rounded-[3rem] shadow-2xl overflow-hidden">
 
     <!-- PANTALLA DE INICIO -->
     <div id="screen-start" class="p-12 text-center animate-fade">
       <img src="https://www.sena.edu.co/Style%20Library/alayout/images/logoSena.png" alt="Logo SENA" class="w-24 h-24 mx-auto mb-8">
       <h1 class="text-4xl font-black text-slate-900 mb-2 tracking-tight uppercase">${title}</h1>
-      <p class="text-slate-400 text-xs font-black tracking-[0.3em] uppercase mb-12">
-        Instructor: <span class="text-slate-600">${instructor ? instructor.toUpperCase() : "POR ASIGNAR"}</span>
+      <p class="text-slate-500 font-bold tracking-wide mb-10 uppercase text-xs">
+        Instructor: <span class="sena-text font-black">${instructor ? instructor.toUpperCase() : "POR ASIGNAR"}</span><br>
+        Tema: <span class="text-slate-900 font-black">${theme ? theme : "SIN TEMA"}</span>
       </p>
 
-      <div class="max-w-sm mx-auto mb-12 text-left">
-        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Aprendiz</label>
-        <input type="text" id="input-learner" placeholder="NOMBRE COMPLETO"
-          class="w-full px-8 py-5 rounded-3xl border-2 border-slate-100 focus:border-[#39A900] focus:outline-none transition-all font-black text-xl shadow-sm uppercase tracking-tighter" />
+      <div class="max-w-3xl mx-auto mb-10 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="rounded-3xl bg-white border border-slate-100 shadow-md p-5">
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cantidad de preguntas</p>
+          <p class="mt-2 text-3xl font-black text-slate-900"><span id="meta-count">${count}</span></p>
+          <p class="mt-1 text-xs font-bold text-slate-500">Se seleccionan aleatoriamente del banco en cada apertura.</p>
+        </div>
+        <div class="rounded-3xl bg-white border border-slate-100 shadow-md p-5 md:col-span-2">
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recomendaciones</p>
+          <ul class="mt-3 text-sm font-bold text-slate-700 space-y-2 list-disc pl-5">
+            <li>No copies contenido, no uses capturas de pantalla ni impresión.</li>
+            <li>No cambies de pestaña/ventana ni cambies de navegador durante la evaluación.</li>
+            <li>Si ocurre alguna acción de riesgo, se registrará en la auditoría y quedará en el PDF.</li>
+          </ul>
+        </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-6 mb-12">
-        <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100 text-center">
-          <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Items</p>
-          <p class="text-2xl font-black text-slate-800">${count}</p>
+      <div class="max-w-md mx-auto space-y-4">
+        <div class="text-left">
+          <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Nombre del aprendiz</label>
+          <input id="input-name" class="mt-2 w-full px-6 py-4 rounded-2xl border border-slate-200 font-black focus:outline-none focus:ring-4 focus:ring-green-100" placeholder="NOMBRE COMPLETO" />
         </div>
-        <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100 text-center">
-          <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Duración</p>
-          <p class="text-2xl font-black text-slate-800">${hasTimer ? `${timeLimit} Min` : "—"}</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="text-left">
+            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Documento / ID</label>
+            <input id="input-id" class="mt-2 w-full px-6 py-4 rounded-2xl border border-slate-200 font-black focus:outline-none focus:ring-4 focus:ring-green-100" placeholder="123456" />
+          </div>
+          <div class="text-left">
+            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Grupo / Ficha</label>
+            <input id="input-group" class="mt-2 w-full px-6 py-4 rounded-2xl border border-slate-200 font-black focus:outline-none focus:ring-4 focus:ring-green-100" placeholder="Opcional" />
+          </div>
         </div>
-      </div>
+        <div class="flex flex-wrap gap-3 justify-center pt-3">
+          <button id="btnStart" class="px-8 py-5 sena-bg text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl transition-all active:scale-95">
+            INICIAR EVALUACIÓN
+          </button>
+          <button id="btnFullscreen" class="px-8 py-5 bg-slate-100 text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest shadow transition-all active:scale-95">
+            PANTALLA COMPLETA
+          </button>
+        </div>
 
-      <button onclick="quizEngine.start()" class="sena-bg hover:bg-[#2d8500] text-white font-black py-6 px-12 rounded-[2rem] transition-all shadow-xl w-full text-xl uppercase tracking-widest active:scale-95">
-        COMENZAR EXAMEN
-      </button>
+        <p class="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">
+          Atajos: números 1–9 seleccionan opción • Enter avanza
+        </p>
+      </div>
     </div>
 
-    <!-- PANTALLA DE CUESTIONARIO -->
-    <div id="screen-quiz" class="hidden">
-      <div class="sena-bg px-8 py-6 text-white flex justify-between items-center relative">
-        <div class="z-10">
-          <span id="label-learner" class="text-[9px] font-black uppercase tracking-[0.2em] opacity-80 block mb-1"></span>
-          <span id="label-progress" class="font-black text-lg uppercase tracking-tight"></span>
+    <!-- PANTALLA DE QUIZ -->
+    <div id="screen-quiz" class="no-select hidden">
+
+      <!-- Header -->
+      <div class="p-10 border-b border-slate-100">
+        <div class="flex items-start justify-between gap-6">
+          <div class="min-w-0">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 sena-bg rounded-[1.5rem] flex items-center justify-center text-white text-xl shadow-lg">
+                <i class="fas fa-clipboard-check"></i>
+              </div>
+              <div class="min-w-0">
+                <h2 class="text-xl font-black text-slate-900 tracking-tight truncate">${title}</h2>
+                <p id="label-learner" class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  APRENDIZ: —
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-6 flex flex-wrap items-center gap-3">
+              <span id="label-qpos" class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-50 border border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                <i class="fa-solid fa-circle-dot sena-text"></i> Pregunta 1 de ${count}
+              </span>
+              <span id="label-answered" class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-50 border border-slate-100 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                <i class="fa-solid fa-square-check sena-text"></i> Respondidas: 0
+              </span>
+              <button id="btnExitFs" class="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white border border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50">
+                <i class="fa-solid fa-expand"></i> Fullscreen
+              </button>
+            </div>
+          </div>
+
+          ${timerBlock}
         </div>
 
-        ${hasTimer ? `
-        <div class="flex items-center gap-4 z-10 bg-white p-3 rounded-2xl shadow-lg">
-          <div class="text-right">
-            <span class="text-[8px] font-black uppercase text-slate-400 block leading-none mb-1">Tiempo</span>
-            <span id="label-timer" class="font-black text-base tracking-widest leading-none text-slate-900">00:00</span>
+        <div class="mt-8">
+          <div class="flex items-center justify-between mb-3">
+            <p id="label-progress" class="text-[10px] font-black text-slate-400 uppercase tracking-widest">ITEM 1 / ${count}</p>
+            <div id="notice-multi" class="hidden items-center gap-2 text-[10px] font-black sena-text uppercase tracking-widest">
+              <i class="fas fa-layer-group"></i> Selección múltiple
+            </div>
           </div>
-          <div class="timer-container">
-            <svg class="timer-svg" viewBox="0 0 60 60">
-              <circle class="timer-bg" cx="30" cy="30" r="26"></circle>
-              <circle id="timer-ring" class="timer-progress" cx="30" cy="30" r="26"></circle>
-            </svg>
+
+          <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+            <div id="bar-progress" class="sena-bg h-3 rounded-full transition-all" style="width:0%"></div>
           </div>
-        </div>` : `
-        <div class="flex items-center gap-3 z-10 bg-white px-4 py-3 rounded-2xl shadow-lg">
-          <span class="text-[8px] font-black uppercase text-slate-400 tracking-[0.2em]">Sin temporizador</span>
-        </div>`}
+
+          <div id="nav-pagination" class="mt-6 flex flex-wrap gap-3 justify-center"></div>
+        </div>
       </div>
 
-      <div class="h-2 bg-slate-100 w-full overflow-hidden">
-        <div id="bar-progress" class="h-full sena-bg transition-all duration-500" style="width: 0%"></div>
-      </div>
-
+      <!-- Body -->
       <div class="p-10">
-        <div id="nav-pagination" class="flex flex-wrap gap-2 mb-8 justify-center border-b border-slate-50 pb-6 custom-scrollbar max-h-24 overflow-y-auto"></div>
-
-        <div id="notice-multi" class="hidden mb-6 p-4 rounded-2xl bg-blue-50 border border-blue-100 text-[10px] font-black text-blue-700 uppercase flex items-center gap-3">
-          <i class="fas fa-check-double text-lg"></i> Selección Múltiple
-        </div>
-
-        <h2 id="quiz-question" class="text-2xl font-black mb-8 leading-snug min-h-[4rem] text-slate-900"></h2>
+        <h2 id="quiz-question" class="text-2xl font-black mb-8 leading-snug min-h-[4rem] text-slate-900 animate-fade"></h2>
         <div id="quiz-options" class="space-y-4"></div>
 
         <div class="mt-12 flex gap-4">
-          <button id="btn-prev" onclick="quizEngine.prev()" class="px-8 py-5 border-2 border-slate-100 text-slate-400 font-black rounded-3xl transition-all hover:bg-slate-50 uppercase tracking-widest text-sm active:scale-95">
+          <button id="btn-prev" onclick="quizEngine.prev()" class="flex-1 py-5 border-2 border-slate-200 rounded-2xl font-black text-sm hover:bg-slate-50 uppercase tracking-widest active:scale-95">
             <i class="fas fa-chevron-left mr-2"></i> Anterior
           </button>
 
-          <button id="btn-main" onclick="quizEngine.handleMainAction()" class="flex-grow sena-bg hover:bg-[#2d8500] text-white font-black py-5 rounded-[1.5rem] transition-all shadow-xl text-xl uppercase tracking-widest active:scale-95">
+          <button id="btn-main" onclick="quizEngine.handleMainAction()" class="flex-1 py-5 sena-bg text-white rounded-2xl font-black shadow-xl text-xl uppercase tracking-widest active:scale-95">
             SIGUIENTE
           </button>
         </div>
@@ -872,51 +1278,206 @@
     </div>
 
     <!-- PANTALLA DE RESULTADOS -->
-    <div id="screen-results" class="hidden p-12 animate-fade">
-      <div class="text-center mb-10">
-        <div class="w-20 h-20 sena-bg text-white rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-xl">
-          <i class="fas fa-poll text-4xl"></i>
+    <div id="screen-results" class="no-select hidden p-12 animate-fade">
+
+      <!-- Lock panel -->
+      <div id="lock-panel" class="${lockResults ? '' : 'hidden'}">
+        <div class="text-center mb-10">
+          <div class="w-20 h-20 bg-slate-900 text-white rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-xl">
+            <i class="fas fa-lock text-3xl"></i>
+          </div>
+          <h3 class="text-3xl font-black text-slate-900 mb-2 tracking-tighter">Resultados bloqueados</h3>
+          <p class="text-slate-500 font-bold uppercase tracking-widest text-xs">Solicite al instructor el PIN para ver el resultado</p>
         </div>
-        <h2 class="text-3xl font-black text-slate-900 mb-2 uppercase tracking-tight">RESULTADOS</h2>
-        <p id="res-learner" class="text-slate-400 font-black uppercase tracking-widest text-[11px]"></p>
-        <p id="res-instructor" class="text-slate-400 font-black uppercase tracking-widest text-[11px] mt-2"></p>
+
+        <div class="max-w-md mx-auto">
+          <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest">PIN instructor</label>
+          <div class="relative mt-2">  <input id="pin-input" type="password" inputmode="numeric" class="w-full pr-14 px-6 py-4 rounded-2xl border border-slate-200 font-black focus:outline-none focus:ring-4 focus:ring-green-100" placeholder="****" />  <button id="btnTogglePin" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 active:scale-95">    <i id="pinEyeIcon" class="fa-solid fa-eye"></i>  </button></div>
+          <button id="btnUnlock" class="mt-4 w-full py-5 sena-bg text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl active:scale-95">
+            DESBLOQUEAR
+          </button>
+          <p id="pin-error" class="mt-3 text-xs font-black text-rose-600 hidden">PIN incorrecto.</p>
+
+          <div class="mt-6 text-center">
+            <button onclick="quizEngine.newAttempt()" class="py-3 border border-slate-200 rounded-2xl font-black text-xs hover:bg-slate-50 uppercase tracking-widest transition-all">
+              NUEVO INTENTO
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div class="bg-slate-50 rounded-[2.5rem] p-10 border border-slate-100 text-center mb-10 shadow-inner">
-        <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4">Calificación</p>
-        <p id="res-score" class="text-8xl font-black text-slate-900 mb-6 tracking-tighter">0/0</p>
-        <div id="res-status" class="inline-block px-12 py-4 rounded-full font-black text-sm uppercase tracking-widest shadow-lg"></div>
-      </div>
+      <!-- Results panel -->
+      <div id="results-panel" class="${lockResults ? 'hidden' : ''}">
+        <div class="text-center mb-10">
+          <div class="w-20 h-20 sena-bg text-white rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-xl">
+            <i class="fas fa-trophy text-3xl"></i>
+          </div>
+          <h3 class="text-3xl font-black text-slate-900 mb-2 tracking-tighter">Resultado final</h3>
+          <p id="res-score" class="text-7xl font-black text-slate-900 mb-6 tracking-tighter">0/0</p>
+          <div id="res-status" class="inline-block px-12 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg"></div>
+          <div id="res-meta" class="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]"></div>
+          <div id="res-verify" class="mt-3 text-[10px] font-black text-slate-500 uppercase tracking-widest"></div>
+        </div>
 
-      <div class="grid grid-cols-1 gap-4 mb-10">
-        <button onclick="quizEngine.generatePDF()" class="w-full py-6 bg-slate-900 text-white rounded-[1.5rem] font-black text-base hover:bg-slate-800 transition-all flex items-center justify-center gap-4 shadow-xl active:scale-95">
-          <i class="fas fa-file-pdf"></i> GENERAR PDF
-        </button>
-        <button onclick="location.reload()" class="py-4 border-2 border-slate-100 rounded-[1.5rem] font-black text-slate-400 text-xs hover:bg-slate-50 uppercase tracking-widest transition-all">
-          NUEVO INTENTO
-        </button>
-      </div>
+        <div class="grid grid-cols-1 gap-4 mb-8">
+          <button id="btnPdf" onclick="quizEngine.generatePDF()" class="w-full py-5 sena-bg text-white rounded-2xl font-black flex items-center justify-center gap-4 shadow-xl active:scale-95">
+            <i class="fas fa-file-pdf"></i> GENERAR PDF
+          </button>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<button id="btnDownloadJSON" onclick="quizEngine.downloadResultJSON()" class="py-4 rounded-2xl border-2 border-slate-200 bg-white font-black text-sm uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95">
+              <i class="fas fa-file-arrow-down mr-2"></i> DESCARGAR RESULTADO (.JSON)
+            </button>
+          </div>
+          <button onclick="quizEngine.newAttempt()" class="py-4 border-2 border-slate-200 rounded-2xl font-black text-xs hover:bg-slate-50 uppercase tracking-widest transition-all">
+            NUEVO INTENTO
+          </button>
+        </div>
 
-      <div class="space-y-4 max-h-[300px] overflow-y-auto pr-3 custom-scrollbar border-t border-slate-100 pt-8" id="res-list"></div>
+        <div class="flex flex-wrap gap-3 justify-center mb-6">
+          <button id="filter-all" class="filter-btn px-6 py-3 rounded-2xl border-2 border-slate-200 font-black text-xs uppercase tracking-widest active">Todas</button>
+          <button id="filter-ok" class="filter-btn px-6 py-3 rounded-2xl border-2 border-slate-200 font-black text-xs uppercase tracking-widest">Correctas</button>
+          <button id="filter-bad" class="filter-btn px-6 py-3 rounded-2xl border-2 border-slate-200 font-black text-xs uppercase tracking-widest">Incorrectas</button>
+        </div>
+
+        <div id="res-list" class="space-y-4"></div>
+      </div>
     </div>
-
   </div>
 
   ${SCR}>
-    // Datos inyectados por el generador
-    const QUESTIONS_DATA = ${questionsJson};
-    const CONFIG_DATA = ${configJson};
+    // Datos embebidos
+    const QUIZ_PACK = ${dataJson};
+    const CONFIG_DATA = QUIZ_PACK.CONFIG_DATA;
+    const QUESTIONS_BANK = QUIZ_PACK.QUESTIONS_BANK;
+    // Logo SENA incrustado (PNG) para PDF sin depender de internet/CORS
+    const SENA_LOGO_DATAURL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANwAAADVCAYAAAA8VZ5JAAATbklEQVR4nO2d3XXjRhKFr/fsu7ERmBPBciIwFcFyDgIwFcFwIpAUgTgRiBMAjugIREcwdASCI1hsBN6HAiWORErsrtvoAlDfk60RGi0Ql9Vdfw04juM4juM4juM4juM4juPk5KfcE3DeoMIUwAzArwCmACYnfrMGsAPwB4AtSuwSz8yJxAVnjQoFgCWA33BaYO9RA/gGYIUSDWFWDgkXnBWehfYZQEEatQHwFS48M7jgLFBhDuAOPKG9pAFwiRKbROM7Z/KP3BMYPRXuANwjndjQjn2PCrcJ7+GcgVu4XMgS8gHiDOmSHYALX2LmwS1cDvKJDe09H9o5OB3jgstDLrHtmbZzcDrGBdc1smeb5p4GgKnv6brH93BdIt7I+9zTeMEn9152hwuuK2TP9Ii03sgYGgAf3InSDb6k7I4l7IkNwFPA3ekAt3BdYNe67WngVq4T3MJ1wxJ2xQbI3BaZ5zAKXHDd8FvuCZzB59wTGAMuuNRUb5bVWGLSztVJiAsuPbPcEwhglnsCQ8cFl55fc08ggD7NtZe44NIzzT2BAKa5JzB0XHDpmeSeQACT3BMYOi44x+kQF5zjdIgLznE6xAXnOB3ignOcDnHBpafOPYEA6twTGDouuPTsck8ggF3uCQwdF1x6/sg9gQD6NNde4oJLzzb3BALY5p7A0PEC1C6o8Aj7WRw1SnzIPYmh4xauG77mnsAZfMs9gTHgguuGNWC6fUEDYJV5DqPABdcF5dMpNlb56v1MusEF1x0r2LRyDdy6dYYLrivK9sgoe1y6desOF1yXSIfjVeZZHLLyrsvd4mGBHFT4jvzV1TuU+Jh5DqPDLVweLpA3jWrXzsHpGBdcDmTPlEt0O/iBjNnwJWVu5MioZUd3W6HEl47u5RzBBWcBOcbqDunaoTcQb+Qm0fjOmbjgrFA9nWLzGTzhNZCA+8qXkDZwwVmjejpY4zPiE55riNDWLjRbuOAsI73+Z5COyFOcFmANcYb8AWCL0gtJHcdxHMdxHMdxHMdxHMdxHMdxMtN9HE4Cu9ODn7z8f0AyJHY//L/HlpwBkFZwFWZ4DtwW0NeANRAh7gD8CQny1hHzeoCd86xvUOL61U/l2T0ox24glQE71Shxz+sCJbHPZYUJgO+IT3v7gjJ/8e8/6SNKIu5vAOb0seVhz3D44VfYQdKYNp7G9IoCwD0qfBzAs7mHLsf0ChU2UV/QRHj1cBXmbcPTe6QR2ymmkEz7763YnR+ZAHhol/L9pMI19KujAvKeZIUjuAp3EKFNKOPFMYF8m99mnINVpuir6CSf9Io02gxVZ7WHR9ELTsS2UI/DY+mW7ihToGdfRlUSq3TV7gezoNvDyYu9UM5he+RnBXRLiDvAiy2PsEAFoDTZru8YV+A3Wyog70eWni5ap0msqd9BvEbbN38r3gFToMKcXOHcIE0PkjrBmG+xQIW/jnpGLSFe2mWi0WVpmcFrqRXcNPK685rYiGA27aY5VNxTcK3cDuVgOl1doUKNEuvcEzlK+FKyhliuIuCaLF7LXF27QsWzSjGJkXOHytTe+5A7hDngviD87IYCGfa0/DjceewdGxsA394NzIo19Op0PreosDOVxSPvxTzgis3BSug3hAl1nmDr8SZaC1crrp1A1ujfUeG/qPCACteosGjX7044G4QdGFJAwgXTBHMJJ3wp2QA/tP2LaQF412W4RGvhvoETIynwOoMEEEHXkF4dNZD123iGCn9TRyzpVvtPyGdyH3BNARHdBwPZKKHZJDc/7MFKbFBhi7A0tAIi8k8B10SjtXArpD2CaQJ5eFd4zib5u7WGtx5vO4Isj0Ld/gVyB8YlID0LuGJ3wssYE/KYd/Uu6QT33LK7IcwlhBlkOXrfLkfvfBl6gHgf14FXTZFLdBKIDl0pHV8+isW7iZhFJ0tLvZdSlngfcTyA3QUFJPj+0Fq+WaZ52EKC2+vAq6bIk28YupRcvRPDXSHcCBTo4G/nhAVK1G2M6gJ5z7OeAa3zxQHECuwCr5m36XrdEJ6Y3OA9C1a+cqacS/KlJTcOV2KLEpco8S/IJnSFPCfEXOVOUjVB/Ck9i06SwOMSk887sVWW1dvQKSHx0jJdHG4fGwH27t4Z5Jts30W4SHZv4ZacSdAg75lucZRoUOESUsxaBFy5RIU/k2WjxCUm1wCagG3D7wgvnC2Q0GvZTeBbvpE2OEy1em61MAXwy8F/F8Q7X4F3rnZ/U7tK7FDhAlIxHcJdG55JQUxi8gT6KvhzSBYQjxeceJYmgVfVTxZHRLjFS7Mv404hlnAecY9DZoprh4WI7hLhVuUO7ATrtInJLO5QYcuOTWos3ALh6+8b4B2HRvkU7N4A+NJ+OLeIS5SeRFwzXEqs25VF6P5sQptDmhq3FBSQ50QtZeo6efmX4CvE/dvPpZxFJFi8zjiD0MTknNDTDDWCayKuif0D5hHXAH10cnSBxOg2nd83PDHZAlSvpWZJuUFcecMDKmwgHqTTuZHPezlNB7DfI687xrRtF5eCbxlq0y6Bp2ecnv4sJV8ygWydKGejxwuuRB2RKLpnjr2Inr1gDcQixYx3jBrcOroC6ZwwfyQa9zQSLth7Licd3DGmzd0awF/EOfyMOGfNEhV+Z/TZ1IYFLqFrznlIAd4L3QD4ZCD73TYiuk8Ij9GFEZ6YDMjqh9975flU2VDuGP09tcnLNfIkL7/FDsBHU0WVlpHnlK40JS4xGSAt4Y4Qk9gMIPrv+IEhJC/vqSFpPx9zd9ftHbJUStXJK24pyWyTfoiMu468eqn1WvY9eblp73eBEh/MNsXpA/LsYr/9jxPXMbmhz+M1N4h/R1VeS25qV/mUOXJ5cJDHv8HZn9XYV31LZbOm+jv2ulTUR37WIHzVcGyc8ylxjQo/g+e5/BXhf8PvyVco4vC7AfCfyBFmiAyr5DiuaoIQr1iqpYXjOI7jOI7jOI7jOI7jOI7jjI7TYQHOoe5OHGt1HqG9gzLHxMWpcFau03Oc0zTg5BF+ga0cVwcuOIt8pVQ5yBihRzg5iXHB2aKmnkwqY9W08Rw1LjhbpChJSVXm4kTggrPDNsnBgDLmlj6uE4ULzg4pLZFbOSO44GywSlqhLmOvko3vnI0LLj8N0hdcArqiS4eECy4/N500Oyo7E7bzBi64vNQnjs1Ng9yr7ux+zitccHlJ1bjH2j2dFhdcPrZZ2keUR04scjrDBZePnJbGrVwmXHB5WGXtnVnS28A7Z+KC654GNryFHibIQPdt8iwjxynFHIUbwhe1Z7LCkuLdlJ7/MScgncsOEvbYJLxHr3DBHSNd8WaNEh9UI1RYQI59OlnkGDjeI9KcnqMvoh0gvqQ8TqriTW0Vd4Fni8SyTClE0cDzN4/igjtG+XRmAZMNwSJd4flgjGm7JNQhc9qox/mRtR8VdhwX3GmYp6cC2m98Odds+eKnV23reC1sa8R+doPBBXeagjjWDSEMcGwJWZz4eRgyN6bntCCONShccKeJPVnlJQ20MS/xns5O/Otce2ZZywq8fSvr2Q0OF9wxZJk2J432RbWfqc6yYvrD6kuqo2NOWuoODhfccQ6dExp2hEMil3jfbT9pDz/UIXPdqceRZ6c+nneIeBzuJdwGuLpYmViJxzN/uwEIxy1b+vsHiFu417C+mRlhgBCHSBH4+8fhhgncyr3ABXeIZHHMSKNpwwAzhO8jWQ4U1l5u1j5Tp8UFt+c858S5MMIAsY4QhgOlBi9McKs5hH5ouOCeWYLjKGmgDwNcIz6/keNA4YUJCrwO2I8Wd5oAoc6J97hUeSbFGjxCL/4PBAfKAgyLKejnMwDcwgmspeSWEAa4BcfSMpaWa/DaMaQsA+oNLrg458QpdPsemcuCMRGIw2JOGIe1l2M5dHqNC473zbvuOAxw3nhah4X8TWvCXAC3ciMXnJS3TAkjNdBbtwX4leYTcBwWrHYMnJKiHjNepwnPOQFIGODayFyOwXCgXIMTyG4g82kIY/WOMVs4Vr5kDX0HLNZcTsHwNK7A6dpcYMQZKOO0cLbCAFMA30lzeYtP6mY+HiZQM1YLx3ppWGGALmA4UNbghQlYn0GvGJ/gxDU9I42mdZTMwZvLe0zAc6AwmI0xTDA+wfG+WXVhAG7u5rlctUvYeLhhgtFZuXEJrjqrmPMcGui/6ZdI0w/yPRgiZ4UJJmMLE4xHcBXVO/ZVteEXp00uT52+ZEb+9q+MyUCsbkEayzzjERwvR7FWxdyE3BkXDAfKNXhhgtzPozPGITjZtyxIo+UoLGVTgGNhWYWqC/XesieMQ3DcaoCNcgwrjoIlwYGygVcTBDF8wXFd71rrdo08jpJTMF5yZjuGOWksswxfcNxqgF301bJn+kyaCwuGA2UHryY4m2ELjmdRGui/yVlOGzaMniOs04ZY7SHMMlzBieudZVG+Krsnz5DmvDkGBbQOFHk2rDDB5yF3bR6u4JjVAP0PA7zHUp1mxQ0TDLaaYJiC41oUraNkgbRHGLOw5EBZDDXPcpiC431D6sIA/HzJNaSd+U8A/gU5vbQmja2vxuaGCQZp5YZXD2epZqvCLTgZ+g2knm175B4F5O+dk+6jq8a2VGtokGFZOG6+5Eoptil4DVBvTlYmiDhYlq6A1iKXlAr4PYPLsxyW4HgZ+A301QCspeQO5TsvcEmZ7x7G/olXTTCwrs3DERw3DHCjXFbN0XV2i6WmrdwvgEGFCYYjOG41wCr6aq6jJLTIleUlZDhQVrCyzDXEMATHzcC/VF6/RK5lraRZrQj3Bjj7J+2z3DOYrs3DEBy3GmAbfTW3sDS2yJW1fyqg9fbKs9zqpwJgIFau/4LjBpa138islyI+u6Wk5H3uYVgWlpWbDuFwx34Ljrtf0oYBZrCyrLXUzo4bJuj94Y79Fhz3EEWtV40VbGecDQ7wrBwjg5+5zF0SxslGfwXH3S9pwwDXsFMGJHAdKDrXPDdMcNXnMEF/BcezKO8Hlt+CW1iq6wb2GqZl0cbmVoCigPdHrLSpCKafguN2T7ZSWMooA/oRew4UZjuGGWmsTumn4KzslyyVAZ3ClgNlC6ibMO3ppZXrn+B43ZMBjnVjwOgG9haWHCjMuSxJY3VGvwTHrQa4UYYBFrAT/3sbWw6UGlwHSkEaqxP6JThe24QGmheQG//TCT/kPlYcKPLsG+1E0MN2DP0RXEUt1fiiPPLW0ump58F3oMyNzGXZpzBBfwTHDQOso6/mFpZqhR8Gu4RHs5yTuexIc+mNA6UfgrPUPbk/jpJT8JwW+i+e0XVt7ofgeC+5Ngwwhx3hx8HtlKzL+uCGCXpRTWBfcNx+/PEvOT9RekcaKwZWp2RAv5yzFLJIjm3BcdOmtN7AJez0S9HBzW3ULee4YYLP1sMEtgXHTJvShQEm4Lmfu3WUnIKb26gtm1lhJO0Y7AqOe4iirhqA6yhZk8ZiYMOBwu86NiWNRceu4Ky85NzC0jyOklOI02JNGk3rQFljBO0YbAqO6w20Ulia21FyCksOFOa+ckEai4o9weVtM/dyLtcYiqPkFHwHykIxly24FrcgjUXDnuCseAP5HtKGNBYfWw6UQXdttiU4/iGKteJ6lodUV1HeHaz9ZQGNR1c+s8Ee7mhLcFaSgvtQWMqGu5xbKj2FKwz0cEc7guO+5FbCALo9ZPcwHSjxz9De4SQ07AiOe4jiOvpqXmFpg75Ytz22HChrDPBwR0uC+0YaR+soYRaWNqSxusOeA4UB691SY0dwZXucrm5Jo13CsfaQfXGUnMKKA2UL3b6ygRzRrBmDih3BAfvSkQvEia6BrhpgCmZhaZ+x5UCJ3Vc2AC6sJRvYEhygEd1XI44SVqvy3FhyoISGCRoYFBtgUXDAoejqM6/QNVHlpZI16Lt12xP3op9ipmppJ59tfeZv1zAqNsCq4IC96D7ivA28lcJSdqvyvIS96O+hTbU65zPeQfZsO8V9kmJXcMD+W/YCb4tO2xtkCU4qGb9VuQ1YPTML6JaWG7wdJthBLFsTfY8OsC044BzRaazbBLwYTdpmrrng9h3RBqFPfdY79EBsQB8EBxyKbvviX9bK5YM7Ss7DigNlh9fe0y16IjagL4IDRHQlLvD8wBvorNsMQy0sZcNNKJ4qzwQ4FP8aZX/EBgA/5Z5AFBXuAPyl9Ew+grN3uxno3u01vGfWAPgQLRSpU/wFZf+W8f0UnBb5wBh7txriFWsIY9lHVgUPpNHWfRSMlvEJTlzTj+CkcH3K1D05HxXuwVuKXwx87/uK/uzheLAKS3O1Ks+NDQdKTxmX4Lg1d6NbDgFI4UC5Jo3VC8YluP6d6WYTbgaKuTYIKRmP4LiFpSvCOH3HRgZKzxiH4Lj5kjZaleeGm4Eyt9QGISXjEByvsNRaq/LcuAMlkLEI7n/gvBjDzigJheNAaSCtFC600+kD44nDybJyCel7WUSMsELpgjtKXAZKAxHrakxL9PEI7hBxoFzh/JekgSYVaehIAe99wBU3GJnQ9oxTcHvOF96l793eocID3q+aX2PkIZVxC27P28LbtlUKzltILO3xxL+uMXKh7RmL0+RtSqxR4gMktlS/+Febp95Y4/jRwWvIUvzSxeacpsICFR7bMiDnXCoU7XN7GEtczXEcx3Ecx3Ecx3Ecx3Ecp1/8H9OQWvssAG9WAAAAAElFTkSuQmCC";
+    const __senaLogo = null;
+    let __senaLogoReady = true;
+    let __senaLogoDataUrl = SENA_LOGO_DATAURL;
+    let __senaLogoDataUrlTried = true;
+    async function __ensureSenaLogoDataUrl() {
+      return __senaLogoDataUrl;
+    }
+const SESSION_KEY = "quizsena_exam_session_v5";
+
+    function safeParse(s) { try { return JSON.parse(s); } catch (_) { return null; } }
+
+    // 64-bit FNV-1a (BigInt)
+    function fnv1a64(str) {
+      let h = 0xcbf29ce484222325n;
+      const prime = 0x100000001b3n;
+      for (let i = 0; i < str.length; i++) {
+        h ^= BigInt(str.charCodeAt(i));
+        h = (h * prime) & 0xFFFFFFFFFFFFFFFFn;
+      }
+      return h;
+    }
+    function formatHash64(hex16) {
+      const s = String(hex16 || "").padStart(16, "0").toUpperCase();
+      return s.slice(0,4) + "-" + s.slice(4,8) + "-" + s.slice(8,12) + "-" + s.slice(12,16);
+    }
+
+    function lettersFromIndexes(idxs) {
+      const map = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      return (idxs || []).map(i => map[i] || ("#" + i));
+    }
+
+    function nowIso() { return new Date().toISOString(); }
+
+    function base64UrlEncodeString(str) {
+      const bytes = new TextEncoder().encode(String(str));
+      let bin = "";
+      bytes.forEach(b => bin += String.fromCharCode(b));
+      return (() => {
+        let s = btoa(bin);
+        // base64url sin regex (evita errores de escape en HTML generado)
+        s = s.split("+").join("-").split("/").join("_");
+        while (s.endsWith("=")) s = s.slice(0, -1);
+        return s;
+      })();
+    }
+
+    async function sha256Hex(str) {
+      const data = new TextEncoder().encode(String(str));
+      const hash = await crypto.subtle.digest("SHA-256", data);
+      const arr = Array.from(new Uint8Array(hash));
+      return arr.map(b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+    }
+
+    // Aviso visual (best-effort) para bloqueos/seguridad
+    let __guardToastTimer = null;
+    function showGuardMessage(msg) {
+      try {
+        let wrap = document.getElementById("guardToast");
+        if (!wrap) {
+          wrap = document.createElement("div");
+          wrap.id = "guardToast";
+          wrap.style.cssText = "position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:99999;max-width:min(720px,92vw);display:none;";
+          const inner = document.createElement("div");
+          inner.style.cssText = "background:rgba(15,23,42,.96);color:#fff;padding:12px 14px;border-radius:16px;font-weight:800;box-shadow:0 18px 45px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);font-size:13px;line-height:1.2;";
+          inner.textContent = "";
+          wrap.appendChild(inner);
+          document.body.appendChild(wrap);
+        }
+        wrap.firstChild.textContent = msg;
+        wrap.style.display = "block";
+        clearTimeout(__guardToastTimer);
+        __guardToastTimer = setTimeout(() => { wrap.style.display = "none"; }, 4500);
+      } catch (_) {}
+    }
+
+    function showToast(msg, ms) {
+      try {
+        const el = document.getElementById("qsToast");
+        if (!el) return;
+        el.textContent = String(msg || "");
+        el.style.display = "block";
+        clearTimeout(el.__t);
+        el.__t = setTimeout(() => { el.style.display = "none"; }, Math.max(900, ms || 1600));
+      } catch(_) {}
+    }
+
+    function qsFireConfetti(durationMs) {
+      try {
+        if (typeof window.confetti !== "function") return;
+        const end = Date.now() + Math.max(0, durationMs || 10000);
+        (function frame() {
+          window.confetti({
+            particleCount: 6,
+            spread: 70,
+            startVelocity: 38,
+            ticks: 200,
+            origin: { x: Math.random(), y: 0.65 }
+          });
+          if (Date.now() < end) requestAnimationFrame(frame);
+        })();
+      } catch (_) {}
+    }
+
+    function countAnswered(arr) {
+      return (arr || []).reduce((acc, x) => acc + ((x && x.length) ? 1 : 0), 0);
+    }
 
     const quizEngine = {
       currentIndex: 0,
       score: 0,
-      learnerName: '',
+      learnerName: "",
+      learnerId: "",
+      learnerGroup: "",
+
       sessionPool: [],
       userAnswers: [],
       displayOptions: [],
+      results: [],
       timerId: null,
       secondsLeft: (CONFIG_DATA.timeLimit || 30) * 60,
       totalSeconds: (CONFIG_DATA.timeLimit || 30) * 60,
+      submittedAt: null,
+      verificationCode: "",
+      unlocked: !CONFIG_DATA.lockResults,
+      audit: [],
+      hadFullscreen: false,
+      wasFullscreen: false,
 
       shuffle(array) {
         let current = array.length, random;
@@ -928,288 +1489,1161 @@
         return array;
       },
 
-      start() {
-        const name = document.getElementById('input-learner').value.trim();
-        if (!name) { alert('INGRESE SU NOMBRE'); return; }
-        this.learnerName = name.toUpperCase();
+      saveSession(extra) {
+        const payload = {
+          v: 5,
+          generatedAt: CONFIG_DATA.generatedAt || null,
+          started: true,
+          finished: false,
+          learnerName: this.learnerName,
+          learnerId: this.learnerId,
+          learnerGroup: this.learnerGroup,
 
-        // Pool de preguntas (barajar o no)
-        const basePool = CONFIG_DATA.shuffleQuestions ? this.shuffle([...QUESTIONS_DATA]) : [...QUESTIONS_DATA];
-        this.sessionPool = basePool.slice(0, CONFIG_DATA.count);
-
-        this.userAnswers = [];
-        this.displayOptions = [];
-
-        this.sessionPool.forEach(q => {
-          this.userAnswers.push([]);
-
-          const neededIncorrect = Math.max(0, CONFIG_DATA.optionsCount - q.correctas.length);
-          const incorrectPool = CONFIG_DATA.shuffleOptions ? this.shuffle([...q.incorrectas]) : [...q.incorrectas];
-          const pickedIncorrect = incorrectPool.slice(0, neededIncorrect);
-
-          const combined = [...q.correctas, ...pickedIncorrect];
-          const finalOptions = CONFIG_DATA.shuffleOptions ? this.shuffle(combined) : combined;
-
-          this.displayOptions.push(finalOptions);
-        });
-
-        document.getElementById('screen-start').classList.add('hidden');
-        document.getElementById('screen-quiz').classList.remove('hidden');
-        document.getElementById('label-learner').innerText = this.learnerName;
-
-        if (CONFIG_DATA.hasTimer) this.initTimer();
-        this.render();
+          currentIndex: this.currentIndex,
+          sessionPool: this.sessionPool,
+          userAnswers: this.userAnswers,
+          displayOptions: this.displayOptions,
+          secondsLeft: this.secondsLeft,
+          totalSeconds: this.totalSeconds,
+          pinUsed: (this.pinUsed || ""),
+          unlocked: this.unlocked,
+          submittedAt: this.submittedAt,
+          verificationCode: this.verificationCode,
+          audit: this.audit
+        };
+        if (extra && typeof extra === "object") Object.assign(payload, extra);
+        try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(payload)); } catch (_) {}
       },
 
-      initTimer() {
-        const label = document.getElementById('label-timer');
-        const ring = document.getElementById('timer-ring');
-        const circumference = 26 * 2 * Math.PI;
+      clearSession() { try { sessionStorage.removeItem(SESSION_KEY); } catch (_) {} },
 
-        if (ring) {
-          ring.style.strokeDasharray = circumference;
-          ring.style.strokeDashoffset = 0;
+      restoreSession() {
+        const raw = sessionStorage.getItem(SESSION_KEY);
+        const saved = safeParse(raw || "");
+        if (!saved || saved.v !== 5) return false;
+        if (saved.generatedAt && CONFIG_DATA.generatedAt && saved.generatedAt !== CONFIG_DATA.generatedAt) return false;
+
+        this.learnerName = saved.learnerName || "";
+        this.learnerId = saved.learnerId || "";
+        this.learnerGroup = saved.learnerGroup || "";
+this.currentIndex = clampInt(saved.currentIndex, 0, Math.max(0, ((saved.sessionPool||[]).length - 1)), 0);
+        this.sessionPool = saved.sessionPool || [];
+        this.userAnswers = saved.userAnswers || [];
+        this.displayOptions = saved.displayOptions || [];
+        this.secondsLeft = clampInt(saved.secondsLeft, 0, 9999999, this.secondsLeft);
+        this.totalSeconds = clampInt(saved.totalSeconds, 1, 9999999, this.totalSeconds);
+        this.unlocked = !!saved.unlocked;
+        this.pinUsed = saved.pinUsed || "";
+        this.submittedAt = saved.submittedAt || null;
+        this.verificationCode = saved.verificationCode || "";
+        this.audit = Array.isArray(saved.audit) ? saved.audit : [];
+
+        const finished = !!saved.finished;
+        if (!saved.started) return false;
+
+        // UI
+        document.getElementById("input-name").value = this.learnerName;
+        document.getElementById("input-id").value = this.learnerId;
+        document.getElementById("input-group").value = this.learnerGroup;
+
+        if (!finished) {
+          this.resumeFromSaved();
+        } else {
+          // Recalcular resultados desde respuestas por si acaso
+          this.finish(true);
         }
+        return true;
+      },
 
-        this.secondsLeft = (CONFIG_DATA.timeLimit || 30) * 60;
-        this.totalSeconds = (CONFIG_DATA.timeLimit || 30) * 60;
+      initTimer(resume) {
+        if (!CONFIG_DATA.hasTimer) return;
+        const circle = document.getElementById("timerCircle");
+        const text = document.getElementById("timerText");
 
-        const tick = () => {
-          this.secondsLeft--;
-          const m = Math.floor(this.secondsLeft / 60);
-          const s = this.secondsLeft % 60;
-          if (label) label.innerText = m.toString().padStart(2,'0') + ':' + s.toString().padStart(2,'0');
+        const radius = 42;
+        const circumference = 2 * Math.PI * radius;
 
-          if (ring) {
-            const offset = circumference - (this.secondsLeft / this.totalSeconds) * circumference;
-            ring.style.strokeDashoffset = offset;
-          }
+        const update = () => {
+          const mm = Math.floor(this.secondsLeft / 60);
+          const ss = this.secondsLeft % 60;
+          text.textContent = String(mm).padStart(2,"0") + ":" + String(ss).padStart(2,"0");
+
+          const progress = this.secondsLeft / this.totalSeconds;
+          const offset = circumference * (1 - progress);
+          circle.style.strokeDasharray = String(circumference);
+          circle.style.strokeDashoffset = String(offset);
 
           if (this.secondsLeft <= 0) {
             clearInterval(this.timerId);
-            alert('¡TIEMPO AGOTADO!');
-            this.finish();
+            this.finish(false);
           }
         };
 
-        // Pintar inicial
-        if (label) label.innerText = Math.floor(this.secondsLeft/60).toString().padStart(2,'0') + ':00';
+        update();
+        clearInterval(this.timerId);
 
-        this.timerId = setInterval(tick, 1000);
+        this.timerId = setInterval(() => {
+          this.secondsLeft = Math.max(0, this.secondsLeft - 1);
+          update();
+          this.saveSession();
+        }, 1000);
+      },
+
+      start() {
+        const name = (document.getElementById("input-name").value || "").trim();
+        const id = (document.getElementById("input-id").value || "").trim();
+        const group = (document.getElementById("input-group").value || "").trim();
+        if (!name || !id) {
+          alert("Por favor ingrese Nombre y Documento/ID.");
+          return;
+        }
+
+        this.learnerName = name;
+        this.learnerId = id;
+        this.learnerGroup = group;
+try {
+          if (document.documentElement && document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+          }
+        } catch (_) {}
+
+
+// construir pool (aleatorio por sesión / pestaña)
+        const bank = Array.isArray(QUESTIONS_BANK) ? QUESTIONS_BANK.slice() : [];
+        const bankLen = bank.length || 0;
+
+        const desiredCount = clampInt(CONFIG_DATA.count || 10, 1, Math.max(1, bankLen), Math.min(10, Math.max(1, bankLen)));
+        const optionsCount = clampInt(CONFIG_DATA.optionsCount || 4, 2, 10, 4);
+
+        // Selección aleatoria SIEMPRE (para que cada apertura genere un examen distinto)
+        const pickPool = bank.slice();
+        this.shuffle(pickPool);
+        let picked = pickPool.slice(0, Math.min(desiredCount, bankLen));
+
+        // Si NO se quiere barajar el orden de presentación, respetar el orden original del banco
+        if (!CONFIG_DATA.shuffleQuestions) {
+          picked = picked.slice().sort((a, b) => (a.__i || 0) - (b.__i || 0));
+        }
+
+        // Construir preguntas con opciones y respuesta(s) correctas
+        this.sessionPool = picked.map((q, idx) => {
+          const correct = Array.isArray(q.correctas) ? q.correctas.slice().map(s => String(s).trim()).filter(Boolean) : [];
+          let incorrect = Array.isArray(q.incorrectas) ? q.incorrectas.slice().map(s => String(s).trim()).filter(Boolean) : [];
+
+          // Evitar que una incorrecta sea igual a una correcta
+          const correctSet = new Set(correct.map(x => x.toLowerCase()));
+          incorrect = incorrect.filter(x => !correctSet.has(x.toLowerCase()));
+
+          const desiredTotal = Math.max(optionsCount, correct.length + 1); // asegurar al menos 1 incorrecta
+          const needIncorrect = Math.max(1, desiredTotal - correct.length);
+
+          // elegir incorrectas
+          const incCopy = incorrect.slice();
+          // Elegir distractores aleatoriamente (independiente de barajar opciones)
+          this.shuffle(incCopy);
+          const chosenInc = incCopy.slice(0, Math.min(needIncorrect, incCopy.length));
+
+          // opciones (correctas + incorrectas elegidas)
+          const optionObjs = correct.concat(chosenInc).map(txt => ({ txt, isCorrect: correctSet.has(String(txt).toLowerCase()) }));
+
+          // si aún hay muy pocas opciones, intentar completar con más incorrectas
+          if (optionObjs.length < 2) {
+            for (const inc of incCopy) {
+              if (optionObjs.length >= 2) break;
+              const key = String(inc).toLowerCase();
+              if (!optionObjs.some(o => String(o.txt).toLowerCase() === key)) {
+                optionObjs.push({ txt: inc, isCorrect: false });
+              }
+            }
+          }
+
+          if (CONFIG_DATA.shuffleOptions) this.shuffle(optionObjs);
+
+          const correctIdx = optionObjs.map((o, i) => o.isCorrect ? i : -1).filter(i => i >= 0);
+
+          return {
+            index: idx,
+            pregunta: String(q.pregunta || ""),
+            opciones: optionObjs.map(o => o.txt),
+            correctas: correctIdx
+          };
+        });
+
+        // display options = índices
+        this.displayOptions = this.sessionPool.map(q => q.opciones.map((_, i) => i));
+
+        this.userAnswers = Array.from({length: this.sessionPool.length}, () => []);
+
+        this.currentIndex = 0;
+        this.unlocked = !CONFIG_DATA.lockResults;
+        this.submittedAt = null;
+        this.verificationCode = "";
+        this.audit = [];
+        this.hadFullscreen = false;
+        this.wasFullscreen = !!document.fullscreenElement;
+
+        document.getElementById("screen-start").classList.add("hidden");
+        document.getElementById("screen-quiz").classList.remove("hidden");
+        document.getElementById("label-learner").innerText = "APRENDIZ: " + this.learnerName.toUpperCase();
+
+        if (CONFIG_DATA.sequentialMode) {
+          document.getElementById("btn-prev").style.display = "none";
+          const nav = document.getElementById("nav-pagination");
+          if (nav) nav.style.display = "none";
+        } else {
+          const nav = document.getElementById("nav-pagination");
+          if (nav) nav.style.display = "flex";
+        }
+
+        this.render();
+        this.renderPagination();
+        this.initTimer(false);
+        this.saveSession();
+      },
+
+      resumeFromSaved() {
+        document.getElementById("screen-start").classList.add("hidden");
+        document.getElementById("screen-quiz").classList.remove("hidden");
+        document.getElementById("label-learner").innerText = "APRENDIZ: " + (this.learnerName || "SIN NOMBRE").toUpperCase();
+
+        if (CONFIG_DATA.sequentialMode) {
+          document.getElementById("btn-prev").style.display = "none";
+          const nav = document.getElementById("nav-pagination");
+          if (nav) nav.style.display = "none";
+        } else {
+          const nav = document.getElementById("nav-pagination");
+          if (nav) nav.style.display = "flex";
+        }
+
+        this.render();
+        this.renderPagination();
+        this.initTimer(true);
+      },
+
+      prev() {
+        if (CONFIG_DATA.sequentialMode) return;
+        if (this.currentIndex > 0) {
+          this.currentIndex--;
+          this.render();
+          this.renderPagination();
+          document.getElementById("btn-prev").style.display = this.currentIndex > 0 ? "flex" : "none";
+        }
+        this.saveSession();
+      },
+
+      goTo(i) {
+        if (CONFIG_DATA.sequentialMode) return;
+        const idx = clampInt(i, 0, this.sessionPool.length - 1, 0);
+        this.currentIndex = idx;
+        this.render();
+        this.renderPagination();
+        document.getElementById("btn-prev").style.display = this.currentIndex > 0 ? "flex" : "none";
+        this.saveSession();
+      },
+
+      renderPagination() {
+        const nav = document.getElementById("nav-pagination");
+        if (!nav) return;
+        if (CONFIG_DATA.sequentialMode) { nav.innerHTML = ""; return; }
+        nav.innerHTML = "";
+        for (let i = 0; i < this.sessionPool.length; i++) {
+          const dot = document.createElement("div");
+          dot.className = "page-dot" + (i === this.currentIndex ? " active" : "");
+          dot.title = "Ir a " + (i + 1);
+          dot.onclick = () => this.goTo(i);
+          nav.appendChild(dot);
+        }
+      },
+
+      toggle(optionIndex) {
+        const q = this.sessionPool[this.currentIndex];
+        if (!q) return;
+        const multi = (q.correctas || []).length > 1;
+
+        const current = this.userAnswers[this.currentIndex] || [];
+        let next = current.slice();
+
+        if (multi) {
+          if (next.includes(optionIndex)) next = next.filter(x => x !== optionIndex);
+          else next.push(optionIndex);
+        } else {
+          next = [optionIndex];
+        }
+
+        this.userAnswers[this.currentIndex] = next;
+        this.render();
+        this.saveSession();
       },
 
       render() {
         const q = this.sessionPool[this.currentIndex];
-        const opts = this.displayOptions[this.currentIndex];
-        const isMulti = q.correctas.length > 1;
+        if (!q) return;
 
-        document.getElementById('notice-multi').style.display = isMulti ? 'flex' : 'none';
-        document.getElementById('quiz-question').innerText = q.pregunta;
-        document.getElementById('label-progress').innerText = 'ITEM ' + (this.currentIndex + 1) + ' / ' + CONFIG_DATA.count;
-        document.getElementById('bar-progress').style.width = ((this.currentIndex + 1) / CONFIG_DATA.count * 100) + '%';
+        const answered = countAnswered(this.userAnswers);
+        document.getElementById("label-answered").innerHTML = '<i class="fa-solid fa-square-check sena-text"></i> Respondidas: ' + answered;
 
-        const optionsContainer = document.getElementById('quiz-options');
-        optionsContainer.innerHTML = '';
+        document.getElementById("label-progress").innerText = "ITEM " + (this.currentIndex + 1) + " / " + this.sessionPool.length;
+        document.getElementById("label-qpos").innerHTML = '<i class="fa-solid fa-circle-dot sena-text"></i> Pregunta ' + (this.currentIndex + 1) + ' de ' + this.sessionPool.length;
 
-        opts.forEach(opt => {
-          const btn = document.createElement('button');
-          const isSelected = this.userAnswers[this.currentIndex].includes(opt);
-          btn.className = 'option-btn w-full text-left p-6 rounded-[1.5rem] border-2 border-slate-100 font-black flex items-center gap-5 bg-white shadow-sm group animate-fade';
-          if (isSelected) btn.classList.add('selected-option');
+        const pct = Math.round(((this.currentIndex + 1) / this.sessionPool.length) * 100);
+        document.getElementById("bar-progress").style.width = pct + "%";
 
-          const indicatorClass = isSelected ? 'sena-bg border-[#39A900] text-white' : 'text-transparent border-slate-200';
-          btn.innerHTML = '<div class="indicator w-7 h-7 rounded-xl border-2 flex items-center justify-center text-[11px] ' + indicatorClass + ' transition-colors"><i class="fas fa-check"></i></div> <span class="text-slate-700">' + opt + '</span>';
-          btn.onclick = () => this.toggle(btn, opt, isMulti);
-          optionsContainer.appendChild(btn);
+        const multi = (q.correctas || []).length > 1;
+        const notice = document.getElementById("notice-multi");
+        if (multi) notice.classList.remove("hidden");
+        else notice.classList.add("hidden");
+
+        const mainBtn = document.getElementById("btn-main");
+        if (this.currentIndex >= this.sessionPool.length - 1) mainBtn.innerText = "FINALIZAR";
+        else mainBtn.innerText = "SIGUIENTE";
+
+        const questionEl = document.getElementById("quiz-question");
+        questionEl.classList.remove("animate-fade");
+        void questionEl.offsetWidth;
+        questionEl.classList.add("animate-fade");
+        questionEl.innerText = q.pregunta;
+
+        try {
+          questionEl.classList.remove("qs-qfade");
+          void questionEl.offsetWidth;
+          questionEl.classList.add("qs-qfade");
+        } catch(_) {}
+
+        const optionsBox = document.getElementById("quiz-options");
+        optionsBox.classList.remove("qs-qfade");
+        void optionsBox.offsetWidth;
+        optionsBox.classList.add("qs-qfade");
+        optionsBox.innerHTML = "";
+
+        const selected = this.userAnswers[this.currentIndex] || [];
+
+        q.opciones.forEach((txt, i) => {
+          const btn = document.createElement("button");
+          btn.classList.add("qs-opt");
+          btn.style.animationDelay = (i * 25) + "ms";
+          btn.className = "option-btn w-full text-left px-6 py-5 rounded-2xl border-2 border-slate-200 hover:bg-slate-50 font-black text-slate-900 flex items-start gap-4";
+          const isSel = selected.includes(i);
+          if (isSel) btn.classList.add("selected-option");
+
+          const badge = document.createElement("div");
+          badge.className = "w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm " + (isSel ? "sena-bg text-white" : "bg-slate-100 text-slate-500");
+          badge.innerText = String(i + 1);
+
+          const p = document.createElement("div");
+          p.className = "flex-1 leading-snug";
+          p.innerText = txt;
+
+          btn.appendChild(badge);
+          btn.appendChild(p);
+          btn.onclick = () => this.toggle(i);
+
+          optionsBox.appendChild(btn);
         });
 
-        const isLast = this.currentIndex === CONFIG_DATA.count - 1;
-        document.getElementById('btn-main').innerText = isLast ? 'FINALIZAR' : 'SIGUIENTE';
-
-        const prevBtn = document.getElementById('btn-prev');
-        const nav = document.getElementById('nav-pagination');
-
+        // secuencial: botón deshabilitado si no hay respuesta
         if (CONFIG_DATA.sequentialMode) {
-          if (prevBtn) prevBtn.style.display = 'none';
-          if (nav) nav.style.display = 'none';
+          mainBtn.disabled = (selected.length === 0);
+          mainBtn.classList.toggle("opacity-50", selected.length === 0);
+          mainBtn.classList.toggle("cursor-not-allowed", selected.length === 0);
         } else {
-          if (nav) nav.style.display = 'flex';
-          this.renderPagination();
-          if (prevBtn) prevBtn.style.display = this.currentIndex > 0 ? 'flex' : 'none';
-        }
-      },
-
-      renderPagination() {
-        const nav = document.getElementById('nav-pagination');
-        if (!nav) return;
-        nav.innerHTML = '';
-        this.sessionPool.forEach((_, i) => {
-          const dot = document.createElement('div');
-          const hasAnswer = this.userAnswers[i].length > 0;
-          const isCurrent = this.currentIndex === i;
-
-          dot.className = 'page-dot';
-          if (isCurrent) dot.classList.add('active');
-          else if (hasAnswer) dot.classList.add('answered');
-          else dot.classList.add('pending');
-
-          dot.innerText = i + 1;
-          dot.onclick = () => { this.currentIndex = i; this.render(); };
-          nav.appendChild(dot);
-        });
-      },
-
-      toggle(el, val, multi) {
-        let current = this.userAnswers[this.currentIndex];
-
-        if (!multi) {
-          document.querySelectorAll('.option-btn').forEach(b => {
-            b.classList.remove('selected-option');
-            const ind = b.querySelector('.indicator');
-            if (ind) ind.className = 'indicator w-7 h-7 rounded-xl border-2 border-slate-200 flex items-center justify-center text-[11px] text-transparent transition-colors';
-          });
-          this.userAnswers[this.currentIndex] = [val];
-        } else {
-          const idx = current.indexOf(val);
-          if (idx > -1) current.splice(idx, 1);
-          else current.push(val);
-        }
-
-        const isNow = this.userAnswers[this.currentIndex].includes(val);
-        const ind = el.querySelector('.indicator');
-
-        if (isNow) {
-          el.classList.add('selected-option');
-          if (ind) ind.className = 'indicator w-7 h-7 rounded-xl border-2 sena-bg border-[#39A900] text-white flex items-center justify-center text-[11px] transition-colors';
-        } else {
-          el.classList.remove('selected-option');
-          if (ind) ind.className = 'indicator w-7 h-7 rounded-xl border-2 border-slate-200 flex items-center justify-center text-[11px] text-transparent transition-colors';
-        }
-
-        if (!CONFIG_DATA.sequentialMode) this.renderPagination();
-      },
-
-      prev() {
-        if (this.currentIndex > 0) {
-          this.currentIndex--;
-          this.render();
+          // libre: igual, pero permite avanzar (Enter) solo si respondió actual
+          mainBtn.disabled = (selected.length === 0);
+          mainBtn.classList.toggle("opacity-50", selected.length === 0);
+          mainBtn.classList.toggle("cursor-not-allowed", selected.length === 0);
         }
       },
 
       handleMainAction() {
-        if (this.userAnswers[this.currentIndex].length === 0) {
-          alert('POR FAVOR SELECCIONE UNA RESPUESTA');
+        const sel = this.userAnswers[this.currentIndex] || [];
+        if (sel.length === 0) {
+          alert("POR FAVOR SELECCIONE UNA RESPUESTA");
           return;
         }
 
-        if (this.currentIndex < CONFIG_DATA.count - 1) {
+        if (this.currentIndex < this.sessionPool.length - 1) {
           this.currentIndex++;
           this.render();
-        } else {
-          this.finish();
+          this.renderPagination();
+          const prevBtn = document.getElementById("btn-prev");
+          if (prevBtn) prevBtn.style.display = (!CONFIG_DATA.sequentialMode && this.currentIndex > 0) ? "flex" : "none";
+          this.saveSession();
+          return;
+        }
+
+        this.finish(false);
+      },
+
+      setFilter(which) {
+        const all = document.getElementById("filter-all");
+        const ok = document.getElementById("filter-ok");
+        const bad = document.getElementById("filter-bad");
+        [all, ok, bad].forEach(b => b && b.classList.remove("active"));
+        if (which === "ok") ok.classList.add("active");
+        else if (which === "bad") bad.classList.add("active");
+        else all.classList.add("active");
+
+        this.renderResults(which);
+      },
+
+      renderResults(filter) {
+        const box = document.getElementById("res-list");
+        if (!box) return;
+        box.innerHTML = "";
+        const want = filter || "all";
+
+        this.results.forEach((r) => {
+          if (want === "ok" && !r.correct) return;
+          if (want === "bad" && r.correct) return;
+
+          const card = document.createElement("div");
+          card.className = "bg-white rounded-3xl border border-slate-200 p-6 shadow-sm";
+
+          const top = document.createElement("div");
+          top.className = "flex items-start gap-4";
+          const icon = document.createElement("div");
+          icon.className = "w-12 h-12 rounded-2xl flex items-center justify-center text-white text-xl " + (r.correct ? "bg-emerald-500" : "bg-rose-500");
+          icon.innerHTML = r.correct ? '<i class="fas fa-check"></i>' : '<i class="fas fa-xmark"></i>';
+
+          const tbox = document.createElement("div");
+          tbox.className = "flex-1 min-w-0";
+          const t = document.createElement("div");
+          t.className = "font-black text-slate-900";
+          t.textContent = "ITEM " + (r.index + 1) + ": " + r.q;
+          const meta = document.createElement("div");
+          meta.className = "mt-2 text-[10px] font-black uppercase tracking-widest " + (r.correct ? "text-emerald-600" : "text-rose-600");
+          meta.textContent = r.correct ? "CORRECTA" : "INCORRECTA";
+
+          tbox.appendChild(t);
+          tbox.appendChild(meta);
+
+          top.appendChild(icon);
+          top.appendChild(tbox);
+
+          const details = document.createElement("div");
+          details.className = "mt-4 rounded-2xl bg-slate-50 border border-slate-200 p-4";
+
+          const optsBox = document.createElement("div");
+          optsBox.className = "space-y-2";
+
+          r.options.forEach((opt, idx) => {
+            const isOk = r.correctas.includes(idx);
+            const isSel = r.selected.includes(idx);
+
+            const line = document.createElement("div");
+            line.className = "flex items-start gap-3 px-3 py-3 rounded-2xl border " + (isOk ? "border-emerald-200 bg-emerald-50" : (isSel ? "border-amber-200 bg-amber-50" : "border-slate-200 bg-white"));
+
+            const tag = document.createElement("div");
+            tag.className = "w-9 h-9 rounded-2xl flex items-center justify-center font-black text-xs " + (isOk ? "bg-emerald-500 text-white" : (isSel ? "bg-amber-500 text-white" : "bg-slate-100 text-slate-500"));
+            tag.textContent = String(idx + 1);
+
+            const txt = document.createElement("div");
+            txt.className = "flex-1 text-sm font-bold text-slate-800";
+            txt.textContent = opt;
+
+            const m = document.createElement("div");
+            m.className = "ml-auto text-[10px] font-black uppercase tracking-widest " + (isOk ? "text-emerald-700" : (isSel ? "text-amber-700" : "text-slate-400"));
+            m.textContent = isOk ? "Correcta" : (isSel ? "Seleccionada" : "");
+
+            line.appendChild(tag);
+            line.appendChild(txt);
+            line.appendChild(m);
+
+            optsBox.appendChild(line);
+          });
+
+          const recap = document.createElement("div");
+          recap.className = "mt-4 text-[10px] font-black text-slate-500 uppercase tracking-widest";
+          const selLetters = lettersFromIndexes(r.selected).join(", ") || "SIN RESPUESTA";
+          const okLetters = lettersFromIndexes(r.correctas).join(", ");
+          recap.textContent = "Tu respuesta: " + selLetters + " • Correcta: " + okLetters;
+
+          details.appendChild(optsBox);
+          details.appendChild(recap);
+
+          card.appendChild(top);
+          card.appendChild(details);
+
+          box.appendChild(card);
+        });
+      },
+
+      computeVerification() {
+        const submittedAt = this.submittedAt || nowIso();
+        const input = (this.learnerId || "") + "|" + submittedAt + "|" + this.score + "/" + this.sessionPool.length;
+        const salt = (CONFIG_DATA.pinHash || "QUIZSENA");
+        const hex = fnv1a64(input + "|" + salt).toString(16).padStart(16, "0").toUpperCase();
+        this.verificationCode = formatHash64(hex);
+        return this.verificationCode;
+      },
+
+      
+      buildResultPayload() {
+        const pct = Math.round((this.score / this.sessionPool.length) * 100);
+        const passed = pct >= 70;
+        return {
+          v: 1,
+          meta: {
+            evStamp: CONFIG_DATA.evStamp,
+            title: CONFIG_DATA.title,
+            theme: CONFIG_DATA.theme,
+            instructor: CONFIG_DATA.instructor,
+            pinHash: CONFIG_DATA.pinHash || "",
+            pinRequired: !!(CONFIG_DATA.pinHash),
+            submittedAt: this.submittedAt || nowIso()
+          },
+          student: {
+            name: String(this.learnerName || "").trim(),
+            id: String(this.learnerId || "").trim(),
+            group: String(this.learnerGroup || "").trim(),
+            pin: String(this.pinUsed || "").trim()
+          },
+          score: { value: this.score, max: this.sessionPool.length, pct },
+          verificationCode: this.verificationCode || "",
+          audit: { events: (this.auditEvents || []).slice() }
+        };
+      },
+
+      async buildResultPackage() {
+        const payload = this.buildResultPayload();
+        const token = base64UrlEncodeString(JSON.stringify(payload));
+        const pinHash = String(CONFIG_DATA.pinHash || "");
+        const sig = await sha256Hex(token + "|" + pinHash);
+        return { payload, token, sig, pinHash, generatedFrom: ("EV_" + CONFIG_DATA.evStamp + "_" + (CONFIG_DATA.theme || "Tema") + ".html") };
+      },
+
+      async copyResultToken() {
+        try {
+          const pack = await this.buildResultPackage();
+          const code = pack.token + "." + pack.sig;
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(code);
+          } else {
+            const ta = document.createElement("textarea");
+            ta.value = code;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand("copy");
+            document.body.removeChild(ta);
+          }
+          showToast("Código copiado. Envíalo al instructor.", 1700);
+          this.recordAudit("copy_token", "Copió código de resultados");
+        } catch (e) {
+          showToast("No se pudo copiar el código.", 1700);
         }
       },
 
-      finish() {
+      async downloadResultJSON() {
+        try {
+          const pack = await this.buildResultPackage();
+          const name = (String(this.learnerName || "APRENDIZ").trim().toUpperCase().replace(/[^A-Z0-9]+/g, "_").slice(0, 32) || "APRENDIZ");
+          const fname = "RES_EV_" + CONFIG_DATA.evStamp + "_" + name + ".json";
+          const blob = new Blob([JSON.stringify(pack, null, 2)], { type: "application/json;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = fname;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showToast("Archivo .json descargado.", 1600);
+          this.recordAudit("download_json", "Descargó archivo JSON de resultados");
+        } catch (e) {
+          showToast("No se pudo generar el JSON.", 1700);
+        }
+      },
+
+      finish(fromRestore) {
         clearInterval(this.timerId);
 
         this.score = 0;
-        const results = [];
+        this.results = [];
 
         this.sessionPool.forEach((q, i) => {
-          const sel = this.userAnswers[i];
+          const sel = this.userAnswers[i] || [];
           const correct = sel.length === q.correctas.length && sel.every(v => q.correctas.includes(v));
           if (correct) this.score++;
 
-          results.push({
+          this.results.push({
+            index: i,
             q: q.pregunta,
-            sel: sel.length > 0 ? sel.join(', ') : 'SIN RESPUESTA',
-            ok: q.correctas.join(', '),
+            selected: sel.slice(),
+            correctas: q.correctas.slice(),
+            options: q.opciones.slice(),
             correct
           });
         });
 
-        document.getElementById('screen-quiz').classList.add('hidden');
-        document.getElementById('screen-results').classList.remove('hidden');
+        const pct = Math.round((this.score / this.sessionPool.length) * 100);
+        const passed = pct >= 70;
+        const status = document.getElementById("res-status");
+        const scoreEl = document.getElementById("res-score");
+        const metaEl = document.getElementById("res-meta");
+        const verifyEl = document.getElementById("res-verify");
 
-        document.getElementById('res-learner').innerText = 'APRENDIZ: ' + this.learnerName;
-        document.getElementById('res-instructor').innerText = 'INSTRUCTOR: ' + (CONFIG_DATA.instructor || 'PLATAFORMA').toUpperCase();
-        document.getElementById('res-score').innerText = this.score + ' / ' + CONFIG_DATA.count;
+        this.submittedAt = this.submittedAt || nowIso();
+        const verify = this.computeVerification();
 
-        const ratio = (this.score / CONFIG_DATA.count) * 100;
-        const badge = document.getElementById('res-status');
+        // UI switches
+        document.getElementById("screen-quiz").classList.add("hidden");
+        document.getElementById("screen-results").classList.remove("hidden");
 
-        if (ratio >= 70) {
-          badge.innerText = 'APROBADO';
-          badge.className = 'inline-block px-12 py-4 rounded-full font-black text-sm uppercase tracking-widest bg-green-100 text-green-700 shadow-sm';
+        // Lock handling
+        const lockPanel = document.getElementById("lock-panel");
+        const resultsPanel = document.getElementById("results-panel");
+
+        if (CONFIG_DATA.lockResults && !this.unlocked) {
+          if (lockPanel) lockPanel.classList.remove("hidden");
+          if (resultsPanel) resultsPanel.classList.add("hidden");
         } else {
-          badge.innerText = 'NO APROBADO';
-          badge.className = 'inline-block px-12 py-4 rounded-full font-black text-sm uppercase tracking-widest bg-red-100 text-red-700 shadow-sm';
+          if (lockPanel) lockPanel.classList.add("hidden");
+          if (resultsPanel) resultsPanel.classList.remove("hidden");
+
+          if (scoreEl) {
+            scoreEl.innerText = this.score + "/" + this.sessionPool.length;
+            scoreEl.className = "text-7xl font-black mb-6 tracking-tighter " + (passed ? "text-emerald-800" : "text-rose-800");
+          }
+
+          if (status) {
+            status.className = "inline-block px-12 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg " +
+              (passed ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800");
+            status.innerText = (passed ? "APROBADO" : "NO APROBADO") + " • " + pct + "%";
+          }
+
+          if (passed && !fromRestore) { qsFireConfetti(10000); }
+
+          const used = CONFIG_DATA.hasTimer ? (this.totalSeconds - this.secondsLeft) : null;
+          const usedTxt = used != null ? (" • Tiempo usado: " + Math.floor(used/60) + "m " + (used%60) + "s") : "";
+          if (metaEl) metaEl.innerText = "Fecha: " + new Date(this.submittedAt).toLocaleString() + usedTxt;
+
+          if (verifyEl) verifyEl.innerText = "Código de verificación: " + verify;
+
+          const fAll = document.getElementById("filter-all");
+          const fOk = document.getElementById("filter-ok");
+          const fBad = document.getElementById("filter-bad");
+          if (fAll) fAll.onclick = () => this.setFilter("all");
+          if (fOk) fOk.onclick = () => this.setFilter("ok");
+          if (fBad) fBad.onclick = () => this.setFilter("bad");
+
+          this.setFilter("all");
         }
 
-        const list = document.getElementById('res-list');
-        list.innerHTML = '';
-        results.forEach((item, i) => {
-          const div = document.createElement('div');
-          div.className = 'p-6 rounded-[2rem] border-2 ' + (item.correct ? 'border-green-100 bg-green-50/40' : 'border-red-100 bg-red-50/40');
-          div.innerHTML =
-            '<p class="text-[12px] font-black mb-3 text-slate-800 uppercase tracking-tight">' + (i+1) + '. ' + item.q + '</p>' +
-            '<div class="flex flex-col gap-2 text-[10px] font-black uppercase tracking-widest">' +
-              '<span class="' + (item.correct ? 'text-green-600' : 'text-red-500') + '">SELECCIÓN: ' + item.sel + '</span>' +
-              '<span class="text-slate-400">CORRECTA: ' + item.ok + '</span>' +
-            '</div>';
-          list.appendChild(div);
-        });
+        this.saveSession({ finished: true });
       },
 
-      generatePDF() {
-        // PDF simple, con jsPDF (si está disponible)
+      unlock(pin) {
+        const input = String(pin || "").trim();
+        if (!input) return false;
+        const hex = fnv1a64("PIN|" + input).toString(16).padStart(16, "0").toUpperCase();
+        if (hex !== (CONFIG_DATA.pinHash || "")) return false;
+        this.pinUsed = input;
+        this.unlocked = true;
+
+        // Mostrar resultados
+        const lockPanel = document.getElementById("lock-panel");
+        const resultsPanel = document.getElementById("results-panel");
+        if (lockPanel) lockPanel.classList.add("hidden");
+        if (resultsPanel) resultsPanel.classList.remove("hidden");
+
+        // Re-render de resultado
+        this.finish(false);
+        this.saveSession({ finished: true, unlocked: true });
+        return true;
+      },
+
+      newAttempt() {
+        clearInterval(this.timerId);
+        this.clearSession();
+        location.reload();
+      },
+
+      recordAudit(type, detail) {
+        const ev = { t: nowIso(), type, detail: detail || "" };
+        this.audit.push(ev);
+        this.saveSession();
+      },
+
+      async generatePDF() {
+        if (CONFIG_DATA.lockResults && !this.unlocked) {
+          alert("Resultados bloqueados. Ingrese el PIN del instructor para generar el PDF.");
+          return;
+        }
         if (!window.jspdf || !window.jspdf.jsPDF) {
-          alert('No se pudo cargar jsPDF. Verifique conexión a internet.');
+          alert("No se pudo cargar jsPDF. Verifique su conexión si usa CDNs.");
           return;
         }
 
+        await __ensureSenaLogoDataUrl();
+
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        const ratio = Math.round((this.score / CONFIG_DATA.count) * 100);
-        const date = new Date().toLocaleString().toUpperCase();
+        const doc = new jsPDF({ unit: "pt", format: "a4" });
 
-        doc.setFillColor(57, 169, 0);
-        doc.rect(0, 0, 210, 45, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(24);
+        const pageW = doc.internal.pageSize.getWidth();
+        const margin = 40;
+
+        const dateStr = new Date(this.submittedAt || nowIso()).toLocaleString();
+
+        const total = this.sessionPool.length;
+        const pct = Math.round((this.score / total) * 100);
+
+        // Header (institucional)
+        const pageH = doc.internal.pageSize.getHeight();
+        const headerH = 168;
+function drawSenaLogoWhite(cx, yTop) {
+          // Logo SENA monocromo (fallback) - aproximación más fiel al isologo
+          doc.setDrawColor(0,0,0);
+          doc.setFillColor(0,0,0);
+
+          // Cabeza
+          doc.circle(cx, yTop + 10, 7, "F");
+
+          // Texto SENA (centrado)
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(18);
+          doc.text("SENA", cx, yTop + 34, { align: "center" });
+
+          // Brazos (barra)
+          doc.setLineWidth(6);
+          doc.line(cx - 34, yTop + 48, cx + 34, yTop + 48);
+
+          // Torso
+          doc.setLineWidth(6);
+          doc.line(cx, yTop + 50, cx, yTop + 84);
+
+          // Piernas
+          doc.setLineWidth(6);
+          doc.line(cx, yTop + 84, cx - 30, yTop + 118);
+          doc.line(cx, yTop + 84, cx + 30, yTop + 118);
+
+          // Base
+          doc.setLineWidth(4);
+          doc.line(cx - 36, yTop + 118, cx + 36, yTop + 118);
+
+          // Reset
+          doc.setLineWidth(1);
+        }
+
+        function addHeader() {
+          const cx = pageW / 2;
+          let y = 28;
+
+          
+          doc.setTextColor(0,0,0);
+// Logo SENA (PNG oficial)
+          try {
+            const w = 70;
+            const h = 68;
+            const src = (__senaLogoDataUrl || (__senaLogoReady ? __senaLogo : null));
+            if (src) {
+              doc.addImage(src, "PNG", cx - (w / 2), y, w, h);
+              y += h + 10;
+            } else {
+              // Si no se pudo cargar el logo oficial, continuar SIN logo
+              // (evita imprimir un logo incorrecto).
+              y += 6;
+            }
+          } catch (e) {
+            y += 6;
+          }
+
+          doc.setTextColor(0, 0, 0);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(12);
+          doc.text(String(CONFIG_DATA.regionLine1 || "SENA Regional Tolima"), cx, y, { align: "center" });
+          y += 16;
+
+          doc.setFontSize(11);
+          doc.text(String(CONFIG_DATA.regionLine2 || "Centro de Comercio y Servicios"), cx, y, { align: "center" });
+          y += 22;
+
+          doc.setFontSize(14);
+          doc.text("EVIDENCIA DE CONOCIMIENTO", cx, y, { align: "center" });
+          y += 18;
+
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(10);
+          const theme = (String(CONFIG_DATA.theme || "").trim() || "—").toUpperCase();
+          doc.text("Tema: " + theme, margin, y);
+          y += 14;
+
+          const inst = (String(CONFIG_DATA.instructor || "").trim() || "POR ASIGNAR").toUpperCase();
+          doc.text("Instructor: " + inst, margin, y);
+          y += 14;
+
+          const apr = (String(this.learnerName || "").trim() || "—").toUpperCase();
+          doc.text("Aprendiz: " + apr, margin, y);
+          y += 14;
+
+          doc.setDrawColor(220, 220, 220);
+          doc.setLineWidth(1);
+          doc.line(margin, y, pageW - margin, y);
+          y += 18;
+
+          return y;
+        }
+
+        const yHeaderEnd = addHeader.call(this);
+
+        // Resultado (debajo del encabezado)
+        const cx2 = pageW/2;
+        const verify = this.verificationCode || this.computeVerification();
+        const darkGreen = { r: 27, g: 94, b: 32 }; // verde oscuro
+        const darkRed = { r: 153, g: 27, b: 27 }; // rojo oscuro
+        const passedPdf = pct >= 70;
+        const mainColor = passedPdf ? darkGreen : darkRed;
+
+        const yResTop = yHeaderEnd + 6;
+
+        doc.setTextColor(0,0,0);
         doc.setFont("helvetica", "bold");
-        doc.text("RESULTADOS DE EVALUACIÓN", 105, 28, { align: "center" });
+        doc.setFontSize(20);
+        doc.text("RESULTADO:", cx2, yResTop + 22, { align: "center" });
 
-        doc.setTextColor(50, 50, 50);
-        doc.setFontSize(13);
-        doc.text('PRUEBA: ' + (CONFIG_DATA.title || '').toUpperCase(), 20, 60);
-        doc.text('APRENDIZ: ' + this.learnerName, 20, 70);
-        doc.text('FECHA: ' + date, 20, 80);
-
-        doc.setDrawColor(230, 230, 230);
-        doc.line(20, 90, 190, 90);
-
-        doc.setFontSize(18);
-        doc.text("CALIFICACIÓN", 105, 115, { align: "center" });
+        doc.setTextColor(mainColor.r, mainColor.g, mainColor.b);
         doc.setFontSize(60);
-        doc.text(this.score + ' / ' + CONFIG_DATA.count, 105, 145, { align: "center" });
+        doc.text(String(this.score) + " / " + String(total), cx2, yResTop + 78, { align: "center" });
 
-        doc.setFontSize(18);
-        const status = ratio >= 70 ? "APROBADO" : "NO APROBADO";
-        doc.setTextColor(ratio >= 70 ? 57 : 200, ratio >= 70 ? 169 : 0, 0);
-        doc.text(status, 105, 165, { align: "center" });
+        doc.setFontSize(25);
+        doc.text("(" + String(pct) + "%)", cx2, yResTop + 112, { align: "center" });
 
-        const safeName = this.learnerName.replace(/\s+/g, '_');
-        doc.save('Resultado_' + safeName + '.pdf');
+        doc.setTextColor(0,0,0);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text("Código de verificación: " + verify, cx2, yResTop + 134, { align: "center" });
+
+        // Salto de línea (espacio vertical)
+        let y = yResTop + 156;
+
+        // Tablas separadas (correctas / incorrectas)
+        const okRows = [];
+        const badRows = [];
+        (this.results || []).forEach((r, i) => {
+          const sel = lettersFromIndexes(r.selected).join(", ");
+          const ok = lettersFromIndexes(r.correctas).join(", ");
+          const row = [
+            String(i + 1),
+            (r.q || "").slice(0, 90),
+            sel || "—",
+            ok || "—"
+          ];
+          if (r.correct) okRows.push(row);
+          else badRows.push(row);
+        });
+
+        const okCount = okRows.length;
+        const badCount = badRows.length;
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.setTextColor(0,0,0);
+        doc.text("Preguntas correctas: " + String(okCount), margin, y);
+        y += 8;
+
+        if (doc.autoTable) {
+          doc.autoTable({
+            startY: y + 10,
+            head: [["#", "Pregunta", "Marcada", "Correcta"]],
+            body: okRows.length ? okRows : [["—", "—", "—", "—"]],
+            styles: { font: "helvetica", fontSize: 8, cellPadding: 4 },
+            headStyles: { fillColor: [27, 94, 32], textColor: 255 },
+            alternateRowStyles: { fillColor: [235, 248, 235] },
+            columnStyles: {
+              0: { cellWidth: 24 },
+              1: { cellWidth: 300 },
+              2: { cellWidth: 100 },
+              3: { cellWidth: 100 }
+            },
+            margin: { left: margin, right: margin }
+          });
+
+          y = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? (doc.lastAutoTable.finalY + 18) : (y + 160);
+
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(12);
+          doc.setTextColor(0,0,0);
+          doc.text("Preguntas incorrectas: " + String(badCount), margin, y);
+          y += 8;
+
+          doc.autoTable({
+            startY: y + 10,
+            head: [["#", "Pregunta", "Marcada", "Correcta"]],
+            body: badRows.length ? badRows : [["—", "—", "—", "—"]],
+            styles: { font: "helvetica", fontSize: 8, cellPadding: 4 },
+            headStyles: { fillColor: [220, 38, 38], textColor: 255 },
+            alternateRowStyles: { fillColor: [255, 235, 235] },
+            columnStyles: {
+              0: { cellWidth: 24 },
+              1: { cellWidth: 300 },
+              2: { cellWidth: 100 },
+              3: { cellWidth: 100 }
+            },
+            margin: { left: margin, right: margin }
+          });
+
+          y = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? (doc.lastAutoTable.finalY + 18) : (y + 160);
+        } else {
+          y += 18;
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
+          doc.text("Tablas no disponibles (autoTable no cargado).", margin, y);
+          y += 14;
+        }
+
+        // Audit events
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(0,0,0);
+        doc.text("AUDITORÍA", margin, y);
+        y += 14;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+
+        const counts = {};
+        (this.audit || []).forEach(ev => {
+          const k = String(ev.type || "evento");
+          counts[k] = (counts[k] || 0) + 1;
+        });
+
+        const keys = Object.keys(counts);
+        if (!keys.length) {
+          doc.text("Sin eventos registrados.", margin, y);
+          y += 14;
+        } else {
+          keys.sort((a,b) => counts[b]-counts[a]);
+          keys.forEach(k => {
+            const line = "• " + k + " × " + counts[k];
+            doc.text(line, margin, y);
+            y += 12;
+            if (y > (pageH - 60)) {
+              doc.addPage();
+              y = 60;
+            }
+          });
+        }
+
+        // Nombre del PDF: R_EV_YYYYMMDDHHMM_NombreAprendiz.pdf
+        const stamp = String(CONFIG_DATA.evStamp || "").trim() || (() => {
+          const d = new Date(this.submittedAt || nowIso());
+          const pad = (n) => String(n).padStart(2, "0");
+          return String(d.getFullYear()) + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes());
+        })();
+
+        const learnerSafe = String(this.learnerName || "APRENDIZ")
+          .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-zA-Z0-9]+/g, "_")
+          .replace(/^_+|_+$/g, "");
+
+        const file = "R_EV_" + String(this.score) + "_" + String(total) + "_" + (learnerSafe || "APRENDIZ") + ".pdf";
+        doc.save(file);
       }
     };
+
+    // helper clamp in exam scope
+    function clampInt(n, min, max, fallback) {
+      const x = parseInt(String(n), 10);
+      if (Number.isNaN(x)) return fallback;
+      return Math.max(min, Math.min(max, x));
+    }
+
+    // Bind start
+    document.getElementById("btnStart").addEventListener("click", () => quizEngine.start());
+
+    // Fullscreen
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.();
+      } else {
+        document.exitFullscreen?.();
+      }
+    }
+    document.getElementById("btnFullscreen").addEventListener("click", toggleFullscreen);
+    document.getElementById("btnExitFs").addEventListener("click", toggleFullscreen);
+
+    document.addEventListener("fullscreenchange", () => {
+      const nowFs = !!document.fullscreenElement;
+      if (nowFs) {
+        quizEngine.hadFullscreen = true;
+        quizEngine.wasFullscreen = true;
+      } else {
+        if (quizEngine.hadFullscreen && quizEngine.wasFullscreen) {
+          quizEngine.recordAudit("exit_fullscreen", "El usuario salió de pantalla completa");
+        }
+        quizEngine.wasFullscreen = false;
+      }
+    });
+
+
+    // Auditoría adicional (cambios de pestaña / foco)
+    function quizIsRunning() {
+      const quizVisible = !document.getElementById("screen-quiz").classList.contains("hidden");
+      return quizVisible && Array.isArray(quizEngine.sessionPool) && quizEngine.sessionPool.length > 0;
+    }
+
+    
+    // Anticopia / antiimpresión (best-effort) + auditoría
+    document.addEventListener("copy", (e) => {
+      if (!quizIsRunning()) return;
+      e.preventDefault();
+      quizEngine.recordAudit("copy_blocked", "Intento de copiar contenido (Ctrl/Cmd+C)");
+      showGuardMessage("Recuerde: no se puede copiar ni tomar pantallazos. Si lo hace, quedará registrado en la auditoría.");
+      showToast("Recuerde: no se puede copiar ni tomar pantallazos. Queda registrado.", 1800);
+      //ntallazos. Si lo hace, quedará registrado en la auditoría.");
+    });
+
+    document.addEventListener("cut", (e) => {
+      if (!quizIsRunning()) return;
+      e.preventDefault();
+      quizEngine.recordAudit("cut_blocked", "Intento de cortar contenido (Ctrl/Cmd+X)");
+    });
+
+    document.addEventListener("contextmenu", (e) => {
+      if (!quizIsRunning()) return;
+      e.preventDefault();
+      quizEngine.recordAudit("contextmenu_blocked", "Intento de abrir menú contextual (clic derecho)");
+    });
+
+    window.addEventListener("beforeprint", () => {
+      if (!quizIsRunning()) return;
+      quizEngine.recordAudit("print_attempt", "Se detectó intento de impresión (beforeprint)");
+    });
+document.addEventListener("visibilitychange", () => {
+      if (!quizIsRunning()) return;
+      if (document.hidden) {
+        quizEngine.recordAudit("tab_hidden", "La pestaña quedó oculta (posible cambio de pestaña/ventana)");
+      } else {
+        quizEngine.recordAudit("tab_visible", "La pestaña volvió a primer plano");
+      }
+    });
+
+    window.addEventListener("blur", () => {
+      if (!quizIsRunning()) return;
+      quizEngine.recordAudit("window_blur", "La ventana perdió el foco (posible cambio de app/navegador)");
+    });
+
+    window.addEventListener("focus", () => {
+      if (!quizIsRunning()) return;
+      quizEngine.recordAudit("window_focus", "La ventana recuperó el foco");
+    });
+
+    window.addEventListener("pagehide", () => {
+      if (!quizIsRunning()) return;
+      quizEngine.recordAudit("pagehide", "La página se ocultó/salió (posible navegación)");
+    });
+
+    // Keyboard navigation: 1-9 select, Enter advances
+    document.addEventListener("keydown", (e) => {
+      const quizVisible = !document.getElementById("screen-quiz").classList.contains("hidden");
+      if (!quizVisible) return;
+
+      const k = (e.key || "").toLowerCase();
+
+      // Bloqueos / auditoría de atajos comunes (best-effort)
+      const isMac = navigator.platform.toLowerCase().includes("mac");
+      const ctrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
+
+      // Ctrl/Cmd + C (aviso inmediato)
+      if (ctrlOrCmd && !e.shiftKey && k === "c") {
+        e.preventDefault();
+        quizEngine.recordAudit("copy_shortcut_blocked", "Atajo Ctrl/Cmd+C detectado (bloqueado)");
+        showGuardMessage("Recuerde: no se puede copiar ni tomar pantallazos. Si lo hace, quedará registrado en la auditoría.");
+        return;
+      }
+
+            // PrintScreen / capturas (best-effort)
+      if (e.key === "PrintScreen" || e.code === "PrintScreen" || e.keyCode === 44) {
+        e.preventDefault();
+        quizEngine.recordAudit("printscreen_key_blocked", "Se presionó PrintScreen (bloqueado; posible intento de captura)");
+        showGuardMessage("Advertencia: no se permite tomar pantallazos. Este evento será registrado en la auditoría.");
+        return;
+      }
+      if (ctrlOrCmd && e.shiftKey && k === "s") {
+        e.preventDefault();
+        quizEngine.recordAudit("screenshot_shortcut", "Atajo de captura detectado (Ctrl/Cmd+Shift+S)");
+      }
+
+      // Copiar / cortar
+      if (ctrlOrCmd && (k === "c" || k === "x")) {
+        e.preventDefault();
+        quizEngine.recordAudit(k === "c" ? "copy_shortcut_blocked" : "cut_shortcut_blocked",
+          "Atajo bloqueado: " + (isMac ? "Cmd" : "Ctrl") + "+" + k.toUpperCase());
+        return;
+      }
+
+      // Imprimir
+      if (ctrlOrCmd && k === "p") {
+        e.preventDefault();
+        quizEngine.recordAudit("print_shortcut_blocked", "Atajo de impresión bloqueado (Ctrl/Cmd+P)");
+        return;
+      }
+
+      // DevTools
+      if (e.key === "F12" || (ctrlOrCmd && e.shiftKey && (k === "i" || k === "j"))) {
+        quizEngine.recordAudit("devtools_shortcut", "Se detectó atajo de herramientas de desarrollador");
+      }
+
+      // Navegación del quiz: 1-9 select, Enter advances
+      if (k >= "1" && k <= "9") {
+        const idx = parseInt(k, 10) - 1;
+        const q = quizEngine.sessionPool[quizEngine.currentIndex];
+        if (q && idx >= 0 && idx < q.opciones.length) {
+          quizEngine.toggle(idx);
+        }
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        quizEngine.handleMainAction();
+      }
+    });
+
+    // PIN unlock
+    const btnUnlock = document.getElementById("btnUnlock");
+    if (btnUnlock) {
+      btnUnlock.addEventListener("click", () => {
+        const pin = (document.getElementById("pin-input").value || "").trim();
+        const ok = quizEngine.unlock(pin);
+        const err = document.getElementById("pin-error");
+        if (!ok) {
+          if (err) err.classList.remove("hidden");
+        } else {
+          if (err) err.classList.add("hidden");
+        }
+      });
+    }
+    // Toggle PIN visibility
+    const btnTogglePin = document.getElementById("btnTogglePin");
+    if (btnTogglePin) {
+      btnTogglePin.addEventListener("click", () => {
+        const inp = document.getElementById("pin-input");
+        const icon = document.getElementById("pinEyeIcon");
+        if (!inp) return;
+        const showing = inp.type === "text";
+        inp.type = showing ? "password" : "text";
+        if (icon) icon.className = showing ? "fa-solid fa-eye" : "fa-solid fa-eye-slash";
+      });
+    }
+
+    // Filters bind (results mode)
+    const fAll = document.getElementById("filter-all");
+    const fOk = document.getElementById("filter-ok");
+    const fBad = document.getElementById("filter-bad");
+    if (fAll) fAll.onclick = () => quizEngine.setFilter("all");
+    if (fOk) fOk.onclick = () => quizEngine.setFilter("ok");
+    if (fBad) fBad.onclick = () => quizEngine.setFilter("bad");
+
+    // Restore if session exists
+    quizEngine.restoreSession();
   ${ESCR}
+
+  <!-- Botón flotante (móvil) para seleccionar Excel -->
+  <button id="fabUpload" class="sm:hidden fixed bottom-4 right-4 z-30 w-14 h-14 rounded-2xl bg-emerald-600 text-white shadow-xl flex items-center justify-center active:scale-95 transition">
+    <i class="fa-solid fa-file-excel text-xl"></i>
+  </button>
+
+
+  <div id="qsToast" class="qs-toast"></div>
 </body>
 </html>`;
     }
-
-
 
     function downloadHtml(html, filename) {
       const blob = new Blob([html], { type: "text/html" });
@@ -1232,12 +2666,15 @@
 
     function doGenerate(mode) {
       if (!state.questions.length) return;
-
-      const quizData = buildQuizData();
-      const html = generateQuizHtml(quizData);
-
-      const file = "QuizSENA_" + slugify(state.config.title) + ".html";
-
+      const stamp = (() => {
+        const d = new Date();
+        const pad = (n) => String(n).padStart(2, "0");
+        return String(d.getFullYear()) + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes());
+      })();
+      const pack = buildQuizPack(stamp);
+      const html = generateQuizHtml(pack);
+      const temaSlug = slugify(state.config.theme || "SinTema");
+      const file = "EV_" + stamp + "_" + temaSlug + ".html";
       if (mode === "preview") previewHtml(html);
       else downloadHtml(html, file);
     }
@@ -1246,52 +2683,60 @@
      *  Eventos UI
      *  ============================ */
     function bind() {
-      // Config bindings
+      // config bindings
       [
         dom.cfgTitle, dom.cfgInstructor, dom.cfgCount, dom.cfgOptions,
-        dom.cfgTimer, dom.cfgTimeLimit, dom.cfgSequential, dom.cfgShuffleQ, dom.cfgShuffleO
+        dom.cfgTimer, dom.cfgTimeLimit, dom.cfgSequential, dom.cfgShuffleQ, dom.cfgShuffleO,
+        dom.cfgLockResults, dom.cfgPin
       ].forEach((el) => {
         el.addEventListener("input", () => {
           if (el === dom.cfgTimer) {
             dom.timerRow.classList.toggle("hidden", !dom.cfgTimer.checked);
             dom.timerRow.classList.toggle("flex", !!dom.cfgTimer.checked);
           }
+          if (el === dom.cfgLockResults) {
+            dom.pinRow.classList.toggle("hidden", !dom.cfgLockResults.checked);
+            dom.pinRow.classList.toggle("flex", !!dom.cfgLockResults.checked);
+          }
           readConfigFromDom();
-          renderStats();
         });
         el.addEventListener("change", () => {
           if (el === dom.cfgTimer) {
             dom.timerRow.classList.toggle("hidden", !dom.cfgTimer.checked);
             dom.timerRow.classList.toggle("flex", !!dom.cfgTimer.checked);
           }
+          if (el === dom.cfgLockResults) {
+            dom.pinRow.classList.toggle("hidden", !dom.cfgLockResults.checked);
+            dom.pinRow.classList.toggle("flex", !!dom.cfgLockResults.checked);
+          }
           readConfigFromDom();
-          renderStats();
         });
       });
 
-      // File select
+      // file select
       dom.fileInput.addEventListener("change", (e) => {
         const f = e.target.files?.[0];
-        if (f) loadFile(f);
+        if (f) loadFileWithProgress(f);
       });
 
-      // Dropzone
+      // dropzone
       dom.dropzone.addEventListener("click", () => dom.fileInput.click());
+      dom.btnDownloadSample.addEventListener("click", (e) => { e.preventDefault(); downloadSampleExcel(); });
       dom.dropzone.addEventListener("dragover", (e) => {
         e.preventDefault();
-        dom.dropzone.classList.add("ring-2", "ring-[#39A900]/30", "border-[#39A900]");
+        dom.dropzone.classList.add("ring-sena");
       });
       dom.dropzone.addEventListener("dragleave", () => {
-        dom.dropzone.classList.remove("ring-2", "ring-[#39A900]/30", "border-[#39A900]");
+        dom.dropzone.classList.remove("ring-sena");
       });
       dom.dropzone.addEventListener("drop", (e) => {
         e.preventDefault();
-        dom.dropzone.classList.remove("ring-2", "ring-[#39A900]/30", "border-[#39A900]");
+        dom.dropzone.classList.remove("ring-sena");
         const f = e.dataTransfer.files?.[0];
-        if (f) loadFile(f);
+        if (f) loadFileWithProgress(f);
       });
 
-      // Sheet change
+      // sheet change
       dom.sheetSelect.addEventListener("change", () => {
         state.sheetName = dom.sheetSelect.value || null;
         reloadSelectedSheet();
@@ -1308,11 +2753,8 @@
         localStorage.removeItem(STORAGE_KEY);
         loadConfig();
         syncConfigToDom();
-        renderPreview();
+        renderStats();
       });
-
-      // Enable reset (desktop)
-      dom.btnReset.classList.remove("hidden");
     }
 
     /** ============================
@@ -1321,8 +2763,316 @@
     loadConfig();
     syncConfigToDom();
     renderStats();
-    renderPreview();
-    bind();
+    
+    /** ============================
+     *  Visor de Resultados (Instructor)
+     *  ============================ */
+    const resultsState = { rows: [], search: "", sortKey: "dateMs", sortDir: "desc" };
+
+    function base64UrlDecodeToString(b64url) {
+      const b64 = String(b64url).replace(/-/g, "+").replace(/_/g, "/") + "===".slice((String(b64url).length + 3) % 4);
+      const bin = atob(b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new TextDecoder().decode(bytes);
+    }
+
+    async function sha256Hex(str) {
+      const data = new TextEncoder().encode(String(str));
+      const hash = await crypto.subtle.digest("SHA-256", data);
+      const arr = Array.from(new Uint8Array(hash));
+      return arr.map(b => b.toString(16).padStart(2, "0")).join("").toUpperCase();
+    }
+
+    function safeUpper(v) { return String(v ?? "").trim().toUpperCase(); }
+
+    async function ingestResultJson(obj, fileNameHint) {
+      let payload = null;
+      let token = "";
+      let sig = "";
+      let pinHash = "";
+
+      if (obj && obj.payload && obj.token && obj.sig) {
+        payload = obj.payload;
+        token = obj.token;
+        sig = obj.sig;
+        pinHash = String(obj.pinHash || payload?.meta?.pinHash || "");
+      } else {
+        payload = obj || {};
+        token = "";
+        sig = "";
+        pinHash = String(payload?.meta?.pinHash || "");
+      }
+
+      // Verificar firma si existe
+      let sigStatus = "—";
+      if (token && sig) {
+        const expected = await sha256Hex(token + "|" + pinHash);
+        sigStatus = (expected === String(sig).toUpperCase()) ? "OK" : "FAIL";
+      }
+
+      const studentName = safeUpper(payload?.student?.name || payload?.studentName || "");
+      const studentId = safeUpper(payload?.student?.id || payload?.studentId || "");
+      const studentPin = safeUpper(payload?.student?.pin || payload?.studentPin || "");
+      const theme = safeUpper(payload?.meta?.theme || payload?.theme || "");
+      const scoreVal = payload?.score?.value ?? payload?.scoreValue ?? 0;
+      const scoreMax = payload?.score?.max ?? payload?.scoreMax ?? 0;
+      const pct = payload?.score?.pct ?? payload?.pct ?? 0;
+      const submittedAt = payload?.submittedAt || payload?.meta?.submittedAt || payload?.date || "";
+      const verif = safeUpper(payload?.verificationCode || payload?.verification || "");
+
+      resultsState.rows.push({
+        studentName, studentId, theme,
+        scoreVal: Number(scoreVal) || 0,
+        scoreMax: Number(scoreMax) || 0,
+        score: `${scoreVal}/${scoreMax}`,
+        pctNum: Number(pct) || 0,
+        pct: String(pct),
+        dateIso: String(submittedAt || ""),
+        dateMs: submittedAt ? (new Date(submittedAt)).getTime() : 0,
+        date: submittedAt ? new Date(submittedAt).toLocaleString() : (fileNameHint || ""),
+        verif,
+        pin: studentPin,
+        sigStatus
+      });
+
+      renderResultsViewer();
+    }
+
+    function renderResultsViewer() {
+      const tb = $("resultsTbody");
+      const btnXls = $("btnExportCSV");
+      const btnClr = $("btnClearResults");
+      const searchInp = $("resultsSearch");
+      if (!tb) return;
+
+      // leer búsqueda
+      if (searchInp && typeof searchInp.value === "string") {
+        resultsState.search = searchInp.value.trim();
+      }
+
+      const q = resultsState.search.toLowerCase();
+      const rows0 = resultsState.rows.slice();
+
+      // filtro
+      let rows = rows0;
+      if (q) {
+        rows = rows0.filter(r => {
+          const hay = [
+            r.studentName, r.studentId, r.theme, r.score, r.pct, r.date, r.verif, r.pin, r.sigStatus
+          ].map(v => String(v || "").toLowerCase()).join(" | ");
+          return hay.includes(q);
+        });
+      }
+
+      // ordenamiento
+      const key = resultsState.sortKey;
+      const dir = resultsState.sortDir;
+      const isDesc = dir === "desc";
+
+      const getVal = (r) => {
+        switch (key) {
+          case "scoreVal": return Number(r.scoreVal) || 0;
+          case "pctNum": return Number(r.pctNum) || 0;
+          case "dateMs": return Number(r.dateMs) || 0;
+          case "studentName": return String(r.studentName || "");
+          case "studentId": return String(r.studentId || "");
+          case "theme": return String(r.theme || "");
+          case "verif": return String(r.verif || "");
+          case "pin": return String(r.pin || "");
+          case "sigStatus": return String(r.sigStatus || "");
+          default: return String(r[key] || "");
+        }
+      };
+
+      rows.sort((a, b) => {
+        const va = getVal(a);
+        const vb = getVal(b);
+        if (typeof va === "number" && typeof vb === "number") {
+          return isDesc ? (vb - va) : (va - vb);
+        }
+        const sa = String(va);
+        const sb = String(vb);
+        const c = sa.localeCompare(sb, "es", { sensitivity: "base", numeric: true });
+        return isDesc ? -c : c;
+      });
+
+      // actualizar iconos de sort en headers
+      document.querySelectorAll("[data-sort]").forEach(btn => {
+        const k = btn.getAttribute("data-sort");
+        const icon = btn.querySelector(".sortIcon");
+        if (!icon) return;
+        if (k === resultsState.sortKey) {
+          icon.textContent = (resultsState.sortDir === "asc") ? "▲" : "▼";
+          icon.className = "sortIcon text-slate-600";
+        } else {
+          icon.textContent = "↕";
+          icon.className = "sortIcon text-slate-300";
+        }
+      });
+
+      if (!rows.length) {
+        tb.innerHTML = q
+          ? '<tr><td colspan="9" class="p-4 text-slate-500 font-semibold">Sin coincidencias para el filtro.</td></tr>'
+          : '<tr><td colspan="9" class="p-4 text-slate-500 font-semibold">Sin resultados cargados.</td></tr>';
+        if (btnXls) btnXls.disabled = !resultsState.rows.length;
+        if (btnClr) btnClr.disabled = !resultsState.rows.length;
+        return;
+      }
+
+      if (btnXls) btnXls.disabled = false;
+      if (btnClr) btnClr.disabled = false;
+
+      tb.innerHTML = rows.map(r => {
+        const sigBadge = r.sigStatus === "OK"
+          ? '<span class="px-2 py-1 rounded-lg text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">OK</span>'
+          : (r.sigStatus === "FAIL"
+              ? '<span class="px-2 py-1 rounded-lg text-[11px] font-black bg-rose-50 text-rose-700 border border-rose-200">FAIL</span>'
+              : '<span class="text-slate-400 font-black">—</span>');
+        return `
+          <tr class="border-b border-slate-100">
+            <td class="p-3 font-black">${escapeHtml(r.studentName || "—")}</td>
+            <td class="p-3 font-black">${escapeHtml(r.studentId || "—")}</td>
+            <td class="p-3 font-black">${escapeHtml(r.theme || "—")}</td>
+            <td class="p-3 font-black mono">${escapeHtml(r.score)}</td>
+            <td class="p-3 font-black mono">${escapeHtml(r.pct)}</td>
+            <td class="p-3 text-xs font-semibold text-slate-600">${escapeHtml(r.date)}</td>
+            <td class="p-3 text-xs font-black text-slate-700">${escapeHtml(r.verif || "—")}</td>
+            <td class="p-3"><input class="w-32 px-3 py-2 rounded-xl border border-slate-200 bg-white font-black text-sm focus:outline-none" value="${escapeHtml(r.pin || "")}" placeholder="—" readonly /></td>
+            <td class="p-3">${sigBadge}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function exportResultsCSV() {
+      // Exporta a Excel (.xlsx) usando SheetJS
+      if (!resultsState.rows.length) return;
+      const aoa = [
+        ["Aprendiz","Documento","Tema","Score","Pct","Fecha","Codigo","Pin","Firma"],
+        ...resultsState.rows.map(r => ([
+          r.studentName ?? "",
+          r.studentId ?? "",
+          r.theme ?? "",
+          r.score ?? "",
+          (r.pct ?? "") + "%",
+          r.date ?? "",
+          r.verif ?? "",
+          r.pin ?? "",
+          r.sigStatus ?? ""
+        ]))
+      ];
+
+      try {
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        ws["!cols"] = [
+          { wch: 28 }, // Aprendiz
+          { wch: 16 }, // Documento
+          { wch: 18 }, // Tema
+          { wch: 8  }, // Score
+          { wch: 6  }, // Pct
+          { wch: 20 }, // Fecha
+          { wch: 18 }, // Codigo
+          { wch: 10 }, // Pin
+          { wch: 10 }  // Firma
+        ];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Resultados");
+
+        const d = new Date();
+        const stamp = String(d.getFullYear())
+          + String(d.getMonth()+1).padStart(2,"0")
+          + String(d.getDate()).padStart(2,"0")
+          + String(d.getHours()).padStart(2,"0")
+          + String(d.getMinutes()).padStart(2,"0");
+
+        XLSX.writeFile(wb, "Resultados_QuizSENA_" + stamp + ".xlsx");
+      } catch (e) {
+        console.error(e);
+        alert("No se pudo exportar a Excel. Verifica que SheetJS (XLSX) esté disponible.");
+      }
+    }
+
+    function bindResultsViewer() {
+      const inp = $("resultsInput");
+      const drop = $("resultsDrop");
+      const btnCsv = $("btnExportCSV");
+      const btnClr = $("btnClearResults");
+
+      if (btnCsv) btnCsv.addEventListener("click", exportResultsCSV);
+      if (btnClr) btnClr.addEventListener("click", () => { resultsState.rows = []; renderResultsViewer(); });
+
+      if (drop && inp) {
+                drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("ring-2","ring-emerald-200"); });
+        drop.addEventListener("dragleave", () => drop.classList.remove("ring-2","ring-emerald-200"));
+        drop.addEventListener("drop", async (e) => {
+          e.preventDefault();
+          drop.classList.remove("ring-2","ring-emerald-200");
+          const files = Array.from(e.dataTransfer.files || []).filter(f => (f.name || "").toLowerCase().endsWith(".json"));
+          for (const f of files) {
+            try {
+              const obj = JSON.parse(await f.text());
+              await ingestResultJson(obj, f.name);
+            } catch (_) {}
+          }
+        });
+
+        inp.addEventListener("change", async (e) => {
+          const files = Array.from(e.target.files || []);
+          for (const f of files) {
+            try {
+              const obj = JSON.parse(await f.text());
+              await ingestResultJson(obj, f.name);
+            } catch (_) {}
+          }
+          inp.value = "";
+        });
+      }
+
+      const pin = $("resultsPin");
+      if (pin) pin.addEventListener("input", () => renderResultsViewer());
+      
+      // búsqueda
+      const search = $("resultsSearch");
+      const btnClearSearch = $("btnClearSearch");
+      if (search) search.addEventListener("input", () => renderResultsViewer());
+      if (btnClearSearch) btnClearSearch.addEventListener("click", () => {
+        if (search) search.value = "";
+        resultsState.search = "";
+        renderResultsViewer();
+      });
+
+      // ordenamiento por columnas
+      document.querySelectorAll("[data-sort]").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          const k = btn.getAttribute("data-sort");
+          if (!k) return;
+          if (resultsState.sortKey === k) {
+            resultsState.sortDir = (resultsState.sortDir === "asc") ? "desc" : "asc";
+          } else {
+            resultsState.sortKey = k;
+            // Por defecto: texto asc, números/fecha desc
+            if (k === "dateMs" || k === "pctNum" || k === "scoreVal") resultsState.sortDir = "desc";
+            else resultsState.sortDir = "asc";
+          }
+          renderResultsViewer();
+        });
+      });
+
+      renderResultsViewer();
+    }
+
+bind();
+    bindResultsViewer();
+    const fab = document.getElementById('fabUpload');
+    if (fab) fab.addEventListener('click', () => dom.fileInput.click());
   </script>
+
+  <!-- Botón flotante (móvil) para seleccionar Excel -->
+  <button id="fabUpload" class="sm:hidden fixed bottom-4 right-4 z-30 w-14 h-14 rounded-2xl bg-emerald-600 text-white shadow-xl flex items-center justify-center active:scale-95 transition">
+    <i class="fa-solid fa-file-excel text-xl"></i>
+  </button>
+
 </body>
 </html>
