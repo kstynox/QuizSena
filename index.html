@@ -520,10 +520,10 @@
       questions: [], // { pregunta, correctas[], incorrectas[] }
       issues: [],    // { rowIndex, type, detail }
       config: {
-        title: "EVALUACIÓN DE APRENDIZAJE",
+        title: "",
         instructor: "",
         theme: "",
-        count: 10,
+        count: 1,
         optionsCount: 4,
         hasTimer: false,
         timeLimit: 30,
@@ -534,6 +534,13 @@
         pin: ""
       }
     };
+
+    const DEFAULT_CONFIG = JSON.parse(JSON.stringify(state.config));
+
+    function resetConfigToDefaults() {
+      // Reinicia solo configuración (campos) a valores iniciales
+      state.config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+    }
 
     const $ = (id) => document.getElementById(id);
 
@@ -603,20 +610,9 @@
       return s.slice(0,4) + "-" + s.slice(4,8) + "-" + s.slice(8,12) + "-" + s.slice(12,16);
     }
 
-    function loadConfig() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
-        const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === "object" && parsed.config) {
-          state.config = { ...state.config, ...parsed.config };
-        }
-      } catch (_) {}
-    }
+    function loadConfig() { /* persistencia deshabilitada */ }
 
-    function saveConfig() {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ config: state.config })); } catch (_) {}
-    }
+    function saveConfig() { /* persistencia deshabilitada */ }
 
     /** ============================
      *  DOM
@@ -1384,6 +1380,17 @@ const SESSION_KEY = "quizsena_exam_session_v5";
 
     function nowIso() { return new Date().toISOString(); }
 
+    function formatDuration(totalSec) {
+      const s0 = Number(totalSec);
+      const s = Math.max(0, Math.floor(isFinite(s0) ? s0 : 0));
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      if (h > 0) return h + "h " + String(m).padStart(2, "0") + "m " + String(sec).padStart(2, "0") + "s";
+      return m + "m " + String(sec).padStart(2, "0") + "s";
+    }
+
+
     function base64UrlEncodeString(str) {
       const bytes = new TextEncoder().encode(String(str));
       let bin = "";
@@ -1473,6 +1480,9 @@ const SESSION_KEY = "quizsena_exam_session_v5";
       secondsLeft: (CONFIG_DATA.timeLimit || 30) * 60,
       totalSeconds: (CONFIG_DATA.timeLimit || 30) * 60,
       submittedAt: null,
+      startedAtMs: null,
+      endedAtMs: null,
+      durationSec: 0,
       verificationCode: "",
       unlocked: !CONFIG_DATA.lockResults,
       audit: [],
@@ -1505,6 +1515,9 @@ const SESSION_KEY = "quizsena_exam_session_v5";
           displayOptions: this.displayOptions,
           secondsLeft: this.secondsLeft,
           totalSeconds: this.totalSeconds,
+          startedAtMs: this.startedAtMs,
+          endedAtMs: this.endedAtMs,
+          durationSec: this.durationSec,
           pinUsed: (this.pinUsed || ""),
           unlocked: this.unlocked,
           submittedAt: this.submittedAt,
@@ -1532,6 +1545,9 @@ this.currentIndex = clampInt(saved.currentIndex, 0, Math.max(0, ((saved.sessionP
         this.displayOptions = saved.displayOptions || [];
         this.secondsLeft = clampInt(saved.secondsLeft, 0, 9999999, this.secondsLeft);
         this.totalSeconds = clampInt(saved.totalSeconds, 1, 9999999, this.totalSeconds);
+        this.startedAtMs = (typeof saved.startedAtMs === "number") ? saved.startedAtMs : null;
+        this.endedAtMs = (typeof saved.endedAtMs === "number") ? saved.endedAtMs : null;
+        this.durationSec = (typeof saved.durationSec === "number") ? saved.durationSec : 0;
         this.unlocked = !!saved.unlocked;
         this.pinUsed = saved.pinUsed || "";
         this.submittedAt = saved.submittedAt || null;
@@ -1568,7 +1584,14 @@ this.currentIndex = clampInt(saved.currentIndex, 0, Math.max(0, ((saved.sessionP
           const ss = this.secondsLeft % 60;
           text.textContent = String(mm).padStart(2,"0") + ":" + String(ss).padStart(2,"0");
 
-          const progress = this.secondsLeft / this.totalSeconds;
+          
+          // Semáforo de tiempo: >2 min verde, <=2 min amarillo, <=1 min rojo
+          let c = "#166534"; // verde oscuro
+          if (this.secondsLeft <= 60) c = "#dc2626"; // rojo
+          else if (this.secondsLeft <= 120) c = "#f59e0b"; // amarillo
+          circle.style.stroke = c;
+          text.style.color = c;
+const progress = this.secondsLeft / this.totalSeconds;
           const offset = circumference * (1 - progress);
           circle.style.strokeDasharray = String(circumference);
           circle.style.strokeDashoffset = String(offset);
@@ -1601,6 +1624,9 @@ this.currentIndex = clampInt(saved.currentIndex, 0, Math.max(0, ((saved.sessionP
         this.learnerName = name;
         this.learnerId = id;
         this.learnerGroup = group;
+        this.startedAtMs = Date.now();
+        this.endedAtMs = null;
+        this.durationSec = 0;
 try {
           if (document.documentElement && document.documentElement.requestFullscreen) {
             document.documentElement.requestFullscreen();
@@ -1990,6 +2016,8 @@ try {
             pinHash: CONFIG_DATA.pinHash || "",
             pinRequired: !!(CONFIG_DATA.pinHash),
             submittedAt: this.submittedAt || nowIso()
+            ,durationSec: this.durationSec || 0
+            ,durationText: formatDuration(this.durationSec || 0)
           },
           student: {
             name: String(this.learnerName || "").trim(),
@@ -2055,6 +2083,12 @@ try {
 
       finish(fromRestore) {
         clearInterval(this.timerId);
+        // Tiempo total (aunque no exista cronómetro)
+        this.endedAtMs = Date.now();
+        const usedByTimer = (CONFIG_DATA.hasTimer ? (this.totalSeconds - this.secondsLeft) : 0);
+        const usedByClock = (this.startedAtMs ? Math.floor((this.endedAtMs - this.startedAtMs) / 1000) : 0);
+        this.durationSec = Math.max(0, usedByClock || usedByTimer || 0);
+
 
         this.score = 0;
         this.results = [];
@@ -2112,8 +2146,8 @@ try {
 
           if (passed && !fromRestore) { qsFireConfetti(10000); }
 
-          const used = CONFIG_DATA.hasTimer ? (this.totalSeconds - this.secondsLeft) : null;
-          const usedTxt = used != null ? (" • Tiempo usado: " + Math.floor(used/60) + "m " + (used%60) + "s") : "";
+          const used = this.durationSec || (CONFIG_DATA.hasTimer ? (this.totalSeconds - this.secondsLeft) : 0);
+          const usedTxt = (" • Tiempo en la prueba: " + formatDuration(used));
           if (metaEl) metaEl.innerText = "Fecha: " + new Date(this.submittedAt).toLocaleString() + usedTxt;
 
           if (verifyEl) verifyEl.innerText = "Código de verificación: " + verify;
@@ -2274,6 +2308,10 @@ function drawSenaLogoWhite(cx, yTop) {
           doc.text("Aprendiz: " + apr, margin, y);
           y += 14;
 
+           const dur = (this.durationSec || (this.startedAtMs ? Math.floor(((this.endedAtMs || Date.now()) - this.startedAtMs) / 1000) : (CONFIG_DATA.hasTimer ? (this.totalSeconds - this.secondsLeft) : 0)));
+          doc.text("Tiempo en la prueba: " + formatDuration(dur), margin, y);
+          y += 14;
+
           doc.setDrawColor(220, 220, 220);
           doc.setLineWidth(1);
           doc.line(margin, y, pageW - margin, y);
@@ -2399,10 +2437,35 @@ function drawSenaLogoWhite(cx, yTop) {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
 
+        const auditLabel = (k) => {
+          const map = {
+            tab_hidden: "Cambio a otra pestaña/ventana",
+            tab_visible: "Volvió a la evaluación",
+            window_blur: "Cambió de ventana o aplicación (posible cambio de navegador)",
+            window_focus: "Volvió a la evaluación",
+            exit_fullscreen: "Salió de pantalla completa",
+            contextmenu_blocked: "Intentó usar clic derecho",
+            copy_shortcut_blocked: "Realizó atajo de copiar (Ctrl+C)",
+            copy_blocked: "Intentó copiar contenido",
+            cut_blocked: "Realizó atajo de cortar (Ctrl+X)",
+            paste_shortcut_blocked: "Realizó atajo de pegar (Ctrl+V)",
+            paste_blocked: "Intentó pegar contenido",
+            printscreen_key_blocked: "Intentó tomar pantallazo (PrintScreen)",
+            screenshot_shortcut: "Intentó tomar captura (Ctrl+Shift+S)",
+            print_shortcut_blocked: "Intentó imprimir (Ctrl+P)",
+            print_attempt: "Intentó imprimir la evaluación",
+            devtools_shortcut: "Intentó abrir herramientas del navegador",
+            pagehide: "Salió o cerró la página",
+            download_json: "Descargó el archivo de resultados"
+          };
+          return map[k] || ("Evento: " + k);
+        };
+
         const counts = {};
         (this.audit || []).forEach(ev => {
           const k = String(ev.type || "evento");
-          counts[k] = (counts[k] || 0) + 1;
+          const label = auditLabel(k);
+          counts[label] = (counts[label] || 0) + 1;
         });
 
         const keys = Object.keys(counts);
@@ -2412,7 +2475,8 @@ function drawSenaLogoWhite(cx, yTop) {
         } else {
           keys.sort((a,b) => counts[b]-counts[a]);
           keys.forEach(k => {
-            const line = "• " + k + " × " + counts[k];
+            const n = counts[k];
+            const line = "• " + k + ": " + n + " " + (n === 1 ? "vez" : "veces");
             doc.text(line, margin, y);
             y += 12;
             if (y > (pageH - 60)) {
@@ -2496,6 +2560,14 @@ function drawSenaLogoWhite(cx, yTop) {
       e.preventDefault();
       quizEngine.recordAudit("cut_blocked", "Intento de cortar contenido (Ctrl/Cmd+X)");
     });
+
+    document.addEventListener("paste", (e) => {
+      if (!quizIsRunning()) return;
+      e.preventDefault();
+      quizEngine.recordAudit("paste_blocked", "Intento de pegar contenido (bloqueado)");
+      showGuardMessage("Recuerde: no se puede pegar contenido durante la evaluación. Este evento quedará registrado en la auditoría.");
+    });
+
 
     document.addEventListener("contextmenu", (e) => {
       if (!quizIsRunning()) return;
@@ -2750,8 +2822,9 @@ document.addEventListener("visibilitychange", () => {
       dom.btnGenerate.addEventListener("click", () => doGenerate("download"));
 
       dom.btnReset.addEventListener("click", () => {
-        localStorage.removeItem(STORAGE_KEY);
-        loadConfig();
+        // Reiniciar (sin persistencia): dejar configuración en blanco y limpiar archivo
+        clearFile();
+        resetConfigToDefaults();
         syncConfigToDom();
         renderStats();
       });
@@ -2760,11 +2833,12 @@ document.addEventListener("visibilitychange", () => {
     /** ============================
      *  Init
      *  ============================ */
-    loadConfig();
+    // Persistencia deshabilitada: iniciar siempre en blanco
+    clearFile();
+    resetConfigToDefaults();
     syncConfigToDom();
     renderStats();
-    
-    /** ============================
+/** ============================
      *  Visor de Resultados (Instructor)
      *  ============================ */
     const resultsState = { rows: [], search: "", sortKey: "dateMs", sortDir: "desc" };
