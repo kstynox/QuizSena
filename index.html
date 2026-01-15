@@ -1500,7 +1500,7 @@ No muestres nada más (sin listas, sin comentarios, sin formato alterno).`;
           <ul class="mt-3 text-sm font-bold text-slate-700 space-y-2 list-disc pl-5">
             <li>No copies contenido, no uses capturas de pantalla ni impresión.</li>
             <li>No cambies de pestaña/ventana ni cambies de navegador durante la evaluación.</li>
-            <li>Si ocurre alguna acción de riesgo, se registrará en la auditoría y quedará en el PDF.</li>
+            <li>Si ocurre alguna acción de riesgo, se registrará como novedades y quedará en el Reporte final</li>
           </ul>
         </div>
       </div>
@@ -3878,7 +3878,7 @@ const yHeaderEnd = addHeader.call(this);
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
         doc.setTextColor(0,0,0);
-        doc.text("AUDITORÍA", margin, y);
+        doc.text("NOVEDADES", margin, y);
         y += 14;
 
         doc.setFont("helvetica", "normal");
@@ -4409,9 +4409,9 @@ doc.text(String(precision) + "% de precisión", margin + wideW / 2, wideY + 206,
       if (!quizIsRunning()) return;
       e.preventDefault();
       quizEngine.recordAudit("copy_blocked", "Intento de copiar contenido (Ctrl/Cmd+C)");
-      showGuardMessage("Recuerde: no se puede copiar ni tomar pantallazos. Si lo hace, quedará registrado en la auditoría.");
-      showToast("Recuerde: no se puede copiar ni tomar pantallazos. Queda registrado.", 1800);
-      //ntallazos. Si lo hace, quedará registrado en la auditoría.");
+      showGuardMessage("Recuerde: no se puede copiar ni tomar pantallazos. Si lo hace, quedará registrado como novedades.");
+      showToast("Recuerde: no se puede copiar ni tomar pantallazos. Queda registrado como novedades.", 1800);
+      //ntallazos. Si lo hace, quedará registrado como novedades.");
     });
 
     document.addEventListener("cut", (e) => {
@@ -4424,7 +4424,7 @@ doc.text(String(precision) + "% de precisión", margin + wideW / 2, wideY + 206,
       if (!quizIsRunning()) return;
       e.preventDefault();
       quizEngine.recordAudit("paste_blocked", "Intento de pegar contenido (bloqueado)");
-      showGuardMessage("Recuerde: no se puede pegar contenido durante la evaluación. Este evento quedará registrado en la auditoría.");
+      showGuardMessage("Recuerde: no se puede pegar contenido durante la evaluación. Este evento quedará registrado como novedades.");
     });
 
 
@@ -4477,7 +4477,7 @@ document.addEventListener("visibilitychange", () => {
       if (ctrlOrCmd && !e.shiftKey && k === "c") {
         e.preventDefault();
         quizEngine.recordAudit("copy_shortcut_blocked", "Atajo Ctrl/Cmd+C detectado (bloqueado)");
-        showGuardMessage("Recuerde: no se puede copiar ni tomar pantallazos. Si lo hace, quedará registrado en la auditoría.");
+        showGuardMessage("Recuerde: no se puede copiar ni tomar pantallazos. Si lo hace, quedará registrado como novedades.");
         return;
       }
 
@@ -4485,7 +4485,7 @@ document.addEventListener("visibilitychange", () => {
       if (e.key === "PrintScreen" || e.code === "PrintScreen" || e.keyCode === 44) {
         e.preventDefault();
         quizEngine.recordAudit("printscreen_key_blocked", "Se presionó PrintScreen (bloqueado; posible intento de captura)");
-        showGuardMessage("Advertencia: no se permite tomar pantallazos. Este evento será registrado en la auditoría.");
+        showGuardMessage("Advertencia: no se permite tomar pantallazos. Este evento será registrado como novedades.");
         return;
       }
       if (ctrlOrCmd && e.shiftKey && k === "s") {
