@@ -4750,7 +4750,29 @@ document.addEventListener("visibilitychange", () => {
       });
 
       // dropzone
-      dom.dropzone.addEventListener("click", () => dom.fileInput.click());
+      // Nota: el botón "Subir Excel" es un <label> con un <input type=file> oculto.
+      // Si dejamos este handler sin filtro, el click del label burbujea al dropzone y dispara
+      // un segundo fileInput.click(). En algunos navegadores eso provoca que el primer
+      // intento no dispare el evento "change" (o quede asociado al segundo click), por lo que
+      // parece que “no carga” hasta el segundo intento.
+      dom.dropzone.addEventListener("click", (e) => {
+        // Si el click viene del botón/label o del propio input, NO duplicar el click.
+        if (e.target && (e.target.closest("label") || e.target.closest("input[type=file]"))) return;
+        // Permite volver a seleccionar el mismo archivo y que dispare change.
+        dom.fileInput.value = "";
+        dom.fileInput.click();
+      });
+
+      // Evita la propagación del click del label (Subir Excel) hacia el dropzone.
+      // Así se mantiene 1 sola apertura del selector y el "change" se dispara al primer intento.
+      const __uploadLabel = dom.fileInput?.closest("label");
+      if (__uploadLabel) {
+        __uploadLabel.addEventListener("click", (e) => {
+          e.stopPropagation();
+          // Permite seleccionar el mismo archivo consecutivamente y forzar change.
+          dom.fileInput.value = "";
+        });
+      }
       dom.btnDownloadSample.addEventListener("click", (e) => { e.preventDefault(); downloadSampleExcel(); });
       
       if (dom.btnDownloadPromptIA) dom.btnDownloadPromptIA.addEventListener("click", (e) => { e.preventDefault(); downloadPromptIA(); });
