@@ -94,23 +94,14 @@
 
   
 
-/* --- Estilos para Modo Práctica (Gamificación) --- */
-.mode-toggle { position: relative; display: inline-flex; align-items: center; cursor: pointer; background: #e2e8f0; border-radius: 99px; padding: 4px; width: fit-content; transition: 0.3s; }
-.mode-toggle input { display: none; }
-.mode-knob { width: 40px; height: 40px; background: white; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); display: flex; align-items: center; justify-content: center; font-size: 18px; color: #64748b; }
-.mode-text { font-size: 13px; font-weight: 900; text-transform: uppercase; padding: 0 16px; color: #64748b; transition: 0.3s; user-select: none; -webkit-user-select: none; }
-
-/* Estado Evaluación (Default) */
-.mode-eval-active .mode-toggle { background: #dcfce7; }
-.mode-eval-active .mode-knob { transform: translateX(0); color: #166534; }
-.mode-eval-active .text-eval { color: #15803d; }
-.mode-eval-active .text-prac { opacity: 0.5; }
-
-/* Estado Práctica (Activado) */
-.mode-prac-active .mode-toggle { background: #ede9fe; } /* Violeta suave */
-.mode-prac-active .mode-knob { transform: translateX(100%); color: #7c3aed; } /* Violeta fuerte */
-.mode-prac-active .text-prac { color: #6d28d9; }
-.mode-prac-active .text-eval { opacity: 0.5; }
+/* --- Modos (Evaluación / Práctica / Millonario) --- */
+.mode-seg { display: inline-flex; gap: 6px; padding: 6px; background: #f1f5f9; border: 1px solid rgba(15,23,42,.08); border-radius: 999px; box-shadow: 0 10px 30px rgba(15,23,42,.05); }
+.mode-btn { display: inline-flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 999px; border: 1px solid rgba(15,23,42,.10); background: #fff; font-weight: 900; text-transform: uppercase; letter-spacing: .18em; font-size: 11px; color: #64748b; transition: .18s ease; }
+.mode-btn:hover{ background:#f8fafc; }
+.mode-btn[aria-pressed="true"]{ border-color: rgba(15,23,42,.18); color:#0f172a; }
+.mode-btn[data-mode="evaluation"][aria-pressed="true"]{ background: #dcfce7; color:#166534; border-color: rgba(22,101,52,.25); }
+.mode-btn[data-mode="practice"][aria-pressed="true"]{ background: #ede9fe; color:#6d28d9; border-color: rgba(109,40,217,.25); }
+.mode-btn[data-mode="millionaire"][aria-pressed="true"]{ background: #fff7ed; color:#9a3412; border-color: rgba(154,52,18,.25); }
 
 /* Animaciones de Práctica */
 @keyframes pop-in { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -226,18 +217,19 @@
           </button>
         </div>
         <div class="mt-6 p-1 flex justify-center">
-          <div id="modeWrapper" class="mode-eval-active">
-            <label class="mode-toggle">
-              <span class="mode-text text-eval">Evaluación</span>
-              <input type="checkbox" id="cfgPracticeMode">
-              <div class="mode-knob">
-                <i id="modeIcon" class="fa-solid fa-file-signature"></i>
-              </div>
-              <span class="mode-text text-prac">Práctica</span>
-            </label>
+          <div class="mode-seg" role="group" aria-label="Modo">
+            <button id="btnModeEval" type="button" class="mode-btn" data-mode="evaluation" aria-pressed="true">
+              <i class="fa-solid fa-file-signature"></i> Evaluación
+            </button>
+            <button id="btnModePrac" type="button" class="mode-btn" data-mode="practice" aria-pressed="false">
+              <i class="fa-solid fa-gamepad"></i> Práctica
+            </button>
+            <button id="btnModeMill" type="button" class="mode-btn" data-mode="millionaire" aria-pressed="false">
+              <i class="fa-solid fa-coins"></i> Millonario
+            </button>
           </div>
         </div>
-        <p id="modeDesc" class="text-center text-xs font-bold text-slate-400 mt-2 uppercase tracking-widest">Modo estricto: Calificación y Seguridad</p>
+        <p id="modeDesc" class="text-center text-xs font-bold text-slate-400 mt-2 uppercase tracking-widest">Modo Evaluación: calificación y seguridad.</p>
 
         <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -583,11 +575,13 @@
       rawRows: [],
       questions: [], // { pregunta, correctas[], incorrectas[] }
       issues: [],    // { rowIndex, type, detail }
+      incorrectColsAvail: 0, // columnas de incorrectas disponibles (para habilitar 6 opciones)
       config: {
         title: "",
         instructor: "",
         theme: "",
-        isPractice: false,
+        mode: "evaluation", // evaluation | practice | millionaire
+        isPractice: false,   // compat: true solo en modo practice
         count: 1,
         optionsCount: 4,
         hasTimer: false,
@@ -660,6 +654,16 @@
       }
       return out;
     }
+
+    // Toma solo UNA respuesta por casilla (si viene separada por ';', se conserva la primera no vacía)
+    function firstAnswerCell(value) {
+      const raw = String(value ?? "").trim();
+      if (!raw) return "";
+      if (!raw.includes(";")) return raw;
+      const parts = raw.split(";").map(s => String(s||"").trim()).filter(Boolean);
+      return parts[0] || "";
+    }
+
 
     // 64-bit FNV-1a (BigInt)
     function fnv1a64(str) {
@@ -748,6 +752,146 @@
       });
     }
 
+    /** ============================
+     *  Modo del generador (Evaluación / Práctica / Millonario)
+     *  ============================ */
+    function setGeneratorMode(newMode, opts = {}) {
+      const mode = (newMode === "practice" || newMode === "millionaire") ? newMode : "evaluation";
+      state.config.mode = mode;
+      state.config.isPractice = (mode === "practice");
+
+      const btnEval = document.getElementById("btnModeEval");
+      const btnPrac = document.getElementById("btnModePrac");
+      const btnMill = document.getElementById("btnModeMill");
+      const desc = document.getElementById("modeDesc");
+      const btnGen = document.getElementById("btnGenerate");
+
+      const setPressed = (btn, pressed) => { if (btn) btn.setAttribute("aria-pressed", pressed ? "true" : "false"); };
+      setPressed(btnEval, mode === "evaluation");
+      setPressed(btnPrac, mode === "practice");
+      setPressed(btnMill, mode === "millionaire");
+
+      // Descripción
+      if (desc) {
+        if (mode === "practice") {
+          desc.textContent = "Modo Práctica: el aprendiz configura cronómetro, puntaje parcial y # de opciones.";
+          desc.className = "text-center text-xs font-bold text-violet-500 mt-2 uppercase tracking-widest";
+        } else if (mode === "millionaire") {
+          desc.textContent = "Modo Millonario: 15 preguntas, 4 opciones, única respuesta. Comodines digitales.";
+          desc.className = "text-center text-xs font-bold text-orange-600 mt-2 uppercase tracking-widest";
+        } else {
+          desc.textContent = "Modo Evaluación: calificación y seguridad.";
+          desc.className = "text-center text-xs font-bold text-slate-400 mt-2 uppercase tracking-widest";
+        }
+      }
+
+      // Color del botón principal
+      if (btnGen) {
+        const base = btnGen.className;
+        btnGen.className = base
+          .replace(/bg-violet-600 text-white hover:bg-violet-700/g, "btn-sena")
+          .replace(/bg-orange-600 text-white hover:bg-orange-700/g, "btn-sena")
+          .trim();
+        if (mode === "practice") btnGen.className = btnGen.className.replace("btn-sena", "bg-violet-600 text-white hover:bg-violet-700");
+        if (mode === "millionaire") btnGen.className = btnGen.className.replace("btn-sena", "bg-orange-600 text-white hover:bg-orange-700");
+      }
+
+      // Bloqueos por modo
+      const lockIdsPractice = ["cfgTimer","cfgTimeLimit","cfgSequential","cfgPartialMultiPoints","cfgLockResults","cfgPin","btnToggleCfgPin","cfgOptions"];
+      const lockIdsMillion  = ["cfgTimer","cfgTimeLimit","cfgSequential","cfgPartialMultiPoints","cfgLockResults","cfgPin","btnToggleCfgPin","cfgOptions","cfgCount"];
+
+      const applyLock = (id, locked) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.disabled = !!locked;
+        const card = el.closest("label") || el.closest(".soft") || el.closest("div");
+        if (card) {
+          card.classList.toggle("opacity-60", !!locked);
+          card.classList.toggle("pointer-events-none", !!locked);
+        }
+      };
+
+      // Restaurar locks
+      [...new Set([...lockIdsPractice, ...lockIdsMillion])].forEach(id => applyLock(id, false));
+
+      if (mode === "practice") {
+        lockIdsPractice.forEach(id => applyLock(id, true));
+
+        // En práctica: ocultar la tarjeta de modo secuencial (queda activo por defecto)
+        const seqCard = document.getElementById("cfgSequentialCard");
+        if (seqCard) seqCard.classList.add("hidden");
+
+        // Forzar seguridad off (no aplica en práctica)
+        if (dom.cfgLockResults) dom.cfgLockResults.checked = false;
+        if (dom.pinRow) { dom.pinRow.classList.add("hidden"); dom.pinRow.classList.remove("flex"); }
+        if (dom.cfgPin) dom.cfgPin.value = "";
+        state.config.lockResults = false;
+        state.config.pin = "";
+
+        // Valores sugeridos
+        if (dom.cfgTimer) dom.cfgTimer.checked = false;
+        if (dom.timerRow) { dom.timerRow.classList.add("hidden"); dom.timerRow.classList.remove("flex"); }
+        if (dom.cfgTimeLimit) dom.cfgTimeLimit.value = "30";
+        if (dom.cfgSequential) dom.cfgSequential.checked = true;
+        if (dom.cfgPartialMultiPoints) dom.cfgPartialMultiPoints.checked = false;
+        if (dom.cfgOptions) dom.cfgOptions.value = "4";
+      }
+
+      if (mode === "millionaire") {
+        lockIdsMillion.forEach(id => applyLock(id, true));
+
+        // Mostrar tarjeta secuencial (no relevante, pero no se necesita ocultar)
+        const seqCard = document.getElementById("cfgSequentialCard");
+        if (seqCard) seqCard.classList.remove("hidden");
+
+        // Forzar restricciones del modo Millonario
+        // Ajuste: en Millonario siempre son 15 preguntas y se bloquea la cantidad.
+        if (dom.cfgCount) dom.cfgCount.value = "15";
+        state.config.count = 15;
+        if (dom.cfgOptions) dom.cfgOptions.value = "4";
+        if (dom.cfgTimer) dom.cfgTimer.checked = false;
+        if (dom.timerRow) { dom.timerRow.classList.add("hidden"); dom.timerRow.classList.remove("flex"); }
+        if (dom.cfgTimeLimit) dom.cfgTimeLimit.value = "30";
+        if (dom.cfgPartialMultiPoints) dom.cfgPartialMultiPoints.checked = false;
+        if (dom.cfgSequential) dom.cfgSequential.checked = true;
+        if (dom.cfgLockResults) dom.cfgLockResults.checked = false;
+        if (dom.pinRow) { dom.pinRow.classList.add("hidden"); dom.pinRow.classList.remove("flex"); }
+        if (dom.cfgPin) dom.cfgPin.value = "";
+        state.config.partialMultiplePoints = false;
+        state.config.hasTimer = false;
+        state.config.lockResults = false;
+        state.config.pin = "";
+
+        // Bloquear 5/6 opciones en el selector (si existen)
+        const opt5 = dom.cfgOptions ? dom.cfgOptions.querySelector('option[value="5"]') : null;
+        const opt6 = dom.cfgOptions ? dom.cfgOptions.querySelector('option[value="6"]') : null;
+        if (opt5) opt5.disabled = true;
+        if (opt6) opt6.disabled = true;
+      } else {
+        // Rehabilitar según columnas disponibles del archivo
+        const opt5 = dom.cfgOptions ? dom.cfgOptions.querySelector('option[value="5"]') : null;
+        const opt6 = dom.cfgOptions ? dom.cfgOptions.querySelector('option[value="6"]') : null;
+        if (opt5) opt5.disabled = false;
+        if (opt6) opt6.disabled = (Number(state.incorrectColsAvail || 0) < 5);
+        // Si estaba en 6 y el archivo no lo soporta, bajar a 5
+        if (opt6 && opt6.disabled && String(dom.cfgOptions.value) === "6") {
+          dom.cfgOptions.value = "5";
+          state.config.optionsCount = 5;
+        }
+      }
+
+      // En evaluación, asegurar que la tarjeta secuencial esté visible
+      if (mode === "evaluation") {
+        const seqCard = document.getElementById("cfgSequentialCard");
+        if (seqCard) seqCard.classList.remove("hidden");
+      }
+
+      if (!opts.silent) {
+        // Sincronizar restricciones derivadas
+        readConfigFromDom();
+      }
+    }
+
     function setLoading(isLoading, msg) {
       dom.progressRow.classList.toggle("hidden", !isLoading);
       dom.progressTxt.textContent = msg || "Procesando…";
@@ -786,7 +930,9 @@
       if (dom.statQTotal) dom.statQTotal.textContent = String(qTotalCount);
 
       // Si no hay preguntas de selección múltiple, no se habilita el puntaje parcial
-      const canPartial = (multiCount > 0) && !state.config.isPractice;
+      const isMill = (state.config.mode === "millionaire");
+      const __oc = Number(state.config.optionsCount || 4);
+      const canPartial = (state.config.mode === "evaluation") && (__oc >= 4 && __oc <= 6) && (multiCount > 0);
       if (dom.cfgPartialMultiPoints) {
         dom.cfgPartialMultiPoints.disabled = !canPartial;
         if (!canPartial) {
@@ -834,8 +980,8 @@
 
       const desired = clampInt(state.config.optionsCount, 2, 10, 4);
 
-      const correct = Array.isArray(q.correctas) ? q.correctas.slice().map(s => String(s).trim()).filter(Boolean) : [];
-      const incorrect = Array.isArray(q.incorrectas) ? q.incorrectas.slice().map(s => String(s).trim()).filter(Boolean) : [];
+      const correct = Array.isArray(q.correctas) ? q.correctas.slice().map(s => String(s ?? "").trim()).filter(Boolean) : [];
+      const incorrect = Array.isArray(q.incorrectas) ? q.incorrectas.slice().map(s => String(s ?? "").trim()).filter(Boolean) : [];
 
       // Mostrar SIEMPRE exactamente la cantidad solicitada (no más):
       // - si la pregunta tiene 2 correctas, mostrar 2 correctas + (resto incorrectas)
@@ -886,19 +1032,17 @@ dom.cfgTheme.value = state.config.theme;
       dom.cfgPin.value = state.config.pin || "";
     
 
-      // Sincronizar switch de modo (UI)
-      const __pm = $("cfgPracticeMode");
-      if (__pm) {
-        __pm.checked = !!state.config.isPractice;
-        __pm.dispatchEvent(new Event("change"));
-      }
+      // Sincronizar modo (UI)
+      setGeneratorMode(state.config.mode || "evaluation", { silent: true });
 }
 
     function readConfigFromDom() {
       state.config.title = dom.cfgTitle.value.trim() || "EVALUACIÓN DE APRENDIZAJE";
       state.config.instructor = dom.cfgInstructor.value.trim();
       state.config.theme = dom.cfgTheme.value.trim();
-      state.config.isPractice = !!$("cfgPracticeMode").checked;
+      // El modo se controla por botones (no por switch)
+      state.config.mode = state.config.mode || "evaluation";
+      state.config.isPractice = (state.config.mode === "practice");
       const maxCount = Math.max(1, state.questions.length || 1);
       state.config.count = clampInt(dom.cfgCount.value, 1, maxCount, Math.min(10, maxCount));
       state.config.optionsCount = clampInt(dom.cfgOptions.value, 2, 10, 4);
@@ -906,7 +1050,8 @@ dom.cfgTheme.value = state.config.theme;
       state.config.timeLimit = clampInt(dom.cfgTimeLimit.value, 1, 999, 30);
       state.config.sequentialMode = !!dom.cfgSequential.checked;
       state.config.partialMultiplePoints = !!dom.cfgPartialMultiPoints.checked;
-      if (state.config.optionsCount !== 4 || state.config.isPractice) state.config.partialMultiplePoints = false;
+      // Puntaje parcial SOLO aplica en Evaluación y con 4–6 opciones
+      if (state.config.mode !== "evaluation" || !(state.config.optionsCount >= 4 && state.config.optionsCount <= 6)) state.config.partialMultiplePoints = false;
       state.config.shuffleQuestions = !!dom.cfgShuffleQ.checked;
       state.config.shuffleOptions = !!dom.cfgShuffleO.checked;
 
@@ -914,8 +1059,7 @@ dom.cfgTheme.value = state.config.theme;
       state.config.pin = (dom.cfgPin.value || "").trim();
 
       
-
-      state.config.isPractice = !!$("cfgPracticeMode").checked;
+      state.config.isPractice = (state.config.mode === "practice");
 saveConfig();
       renderStats();
           if (state.questions.length > 0) { dom.dzIcon.classList.add('qs-bounce'); setTimeout(()=>dom.dzIcon.classList.remove('qs-bounce'), 650); }
@@ -933,15 +1077,19 @@ const maxLen = Array.isArray(all)
   : 0;
 const incorrectColsAvail = Math.max(0, maxLen - 2);
 
+state.incorrectColsAvail = incorrectColsAvail;
+
 const opt6 = dom.cfgOptions ? dom.cfgOptions.querySelector('option[value="6"]') : null;
 if (opt6) opt6.disabled = incorrectColsAvail < 5;
-
 // Si el usuario tenía seleccionado 6 y el archivo no lo soporta, se baja a 5.
 if (opt6 && opt6.disabled && String(dom.cfgOptions.value) === "6") {
   dom.cfgOptions.value = "5";
   state.config.optionsCount = 5;
   saveConfig();
 }
+
+// Reaplicar bloqueos del modo actual (sin disparar lectura completa)
+try { setGeneratorMode(state.config.mode || "evaluation", { silent: true }); } catch (_) {}
 
       state.rawRows = Array.isArray(all) ? all.slice(1) : [];
       state.issues = [];
@@ -952,7 +1100,7 @@ if (opt6 && opt6.disabled && String(dom.cfgOptions.value) === "6") {
 
         const qText = String((row && row[0]) ?? "").trim();
         const correctCell = String((row && row[1]) ?? "").trim();
-        const incorrectCells = (row || []).slice(2).map(v => String(v ?? "").trim()).filter(Boolean);
+        const incorrectCells = (row || []).slice(2).map(v => firstAnswerCell(v)).map(v => String(v ?? "").trim()).filter(Boolean);
 
         if (!qText && !correctCell && incorrectCells.length === 0) return;
 
@@ -1185,51 +1333,66 @@ if (opt6 && opt6.disabled && String(dom.cfgOptions.value) === "6") {
     
 function downloadPromptIA() {
   try {
-    const prompt = `Genera un archivo Excel (.xlsx) con preguntas tipo quiz del tema: “XXXXXXXXXX”.
+    const prompt = `### Rol
+Actúa como un diseñador instruccional y experto en evaluación tipo quiz (estilo SENA), especializado en crear bancos de preguntas con distractores plausibles y nivel de dificultad variado, listos para exportar a Excel.
 
-Necesito XXXX PREGUNTAS en total.
+### Tarea
+Genera un archivo Excel (.xlsx) con preguntas tipo quiz del tema: “{TEMA}”.
+Necesito {N_PREGUNTAS} preguntas en total.
 
-Requisitos estrictos del archivo:
+### Contexto
+El archivo se usará para evaluaciones y práctica. Debe ser claro, consistente y sin ambigüedades. Redacción en español, estilo SENA.
 
-La primera fila debe ser encabezado con estas columnas exactas (en este orden):
+Requisitos estrictos:
+1) Estructura del Excel
+- La primera fila debe ser encabezado con estas columnas exactas (en este orden):
+  Pregunta
+  Correctas
+  Incorrecta 1
+  Incorrecta 2
+  Incorrecta 3
+  Incorrecta 4
+  Incorrecta 5
+- Cada fila corresponde a una pregunta.
 
-Pregunta
-Correctas
-Incorrecta 1
-Incorrecta 2
-Incorrecta 3
-Incorrecta 4
-Incorrecta 5
+2) Reglas de respuestas
+- En Correctas escribe la(s) respuesta(s) correcta(s).
+- Si hay más de una correcta (selección múltiple), sepáralas con punto y coma ; (ejemplo: Lunes;Martes).
+- En Incorrecta 1–5 escribe distractores plausibles pero incorrectos.
+- No repitas opciones dentro de la misma pregunta y evita reciclar exactamente las mismas respuestas en muchas preguntas.
 
-Cada fila es una pregunta.
+3) Calidad pedagógica
+- Varía dificultad: básico / medio / avanzado (mezcla equilibrada).
+- Evita preguntas ambiguas o con varias interpretaciones válidas.
+- Evita pistas obvias (por ejemplo, una opción exageradamente larga frente a otras muy cortas).
+- Mantén consistencia de términos, unidades, siglas y contexto.
 
-En Correctas escribe la(s) respuesta(s) correcta(s).
+4) Distribución obligatoria
+- 70% preguntas de única respuesta (1 correcta).
+- 30% preguntas de selección múltiple (entre 2 y 5 correctas).
 
-Si hay más de una correcta (selección múltiple), sepáralas con punto y coma ; (ejemplo: Lunes;Martes).
+### Razonamiento (verificación interna antes de entregar)
+Antes de generar la salida final, verifica internamente que:
+- Hay exactamente {N_PREGUNTAS} filas de preguntas (más el encabezado).
+- Las columnas están en el orden exacto y con nombres idénticos.
+- Se cumple el 70/30 (única vs múltiple).
+- En selección múltiple, las correctas están separadas solo por ; y no hay correctas en las columnas Incorrecta.
+- No hay duplicados evidentes de preguntas ni de combinaciones de respuestas.
+- No hay texto fuera de la tabla.
 
-En Incorrecta 1–5 escribe respuestas plausibles pero incorrectas.
+### Formato de salida (estricto)
+Salida obligatoria:
+1) Exporta el resultado como archivo Excel (.xlsx).
+2) Muestra también el contenido en una tabla (vista previa) con exactamente las 7 columnas indicadas y {N_PREGUNTAS} filas de preguntas (más el encabezado).
 
-No incluyas explicaciones ni texto adicional fuera de la tabla.
+### Condiciones de finalización (estrictas)
+La respuesta debe contener únicamente:
+- El archivo .xlsx generado, y
+- La tabla de vista previa con 7 columnas y {N_PREGUNTAS} filas.
+No incluyas nada más (sin listas adicionales, sin comentarios, sin explicaciones, sin formato alterno).
 
-Varía el nivel de dificultad (básico, medio, avanzado).
-
-Evita preguntas ambiguas y evita respuestas repetidas.
-
-Redacción en español, estilo SENA.
-
-Incluye al menos:
-
-70% preguntas de única respuesta (1 correcta)
-
-30% preguntas de selección múltiple (2 a 5 correctas)
-
-Salida obligatoria (estricta):
-
-Exporta el resultado como archivo Excel (.xlsx).
-
-Muestra también el contenido en una tabla (vista previa) en tu respuesta, con exactamente las 7 columnas indicadas y XX filas de preguntas (más el encabezado).
-
-No muestres nada más (sin listas, sin comentarios, sin formato alterno).`;
+NOTA: Reemplaza {TEMA} y {N_PREGUNTAS} antes de usar este prompt.
+`;
 
     const blob = new Blob([prompt], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -1283,18 +1446,38 @@ No muestres nada más (sin listas, sin comentarios, sin formato alterno).`;
         return null;
       }
 
-      const bank = (state.questions || []).map((q, __i) => ({
+      const mode = state.config.mode || "evaluation";
+
+      let bank = (state.questions || []).map((q, __i) => ({
         __i,
         pregunta: q.pregunta,
         correctas: Array.isArray(q.correctas) ? q.correctas.slice() : [],
         incorrectas: Array.isArray(q.incorrectas) ? q.incorrectas.slice() : []
       }));
 
+      // Modo Millonario: solo preguntas de única respuesta y con suficientes incorrectas para 4 opciones
+      if (mode === "millionaire") {
+        bank = bank
+          .filter(q => Array.isArray(q.correctas) && q.correctas.length === 1)
+          .map(q => ({
+            ...q,
+            correctas: q.correctas.map(s => firstAnswerCell(s)).filter(Boolean).slice(0,1),
+            incorrectas: q.incorrectas.map(s => firstAnswerCell(s)).filter(Boolean)
+          }))
+          .filter(q => q.correctas.length === 1 && q.incorrectas.length >= 3);
+
+        if (bank.length < 15) {
+          alert("Modo Millonario requiere al menos 15 preguntas de única respuesta con 3 incorrectas (4 opciones). Banco disponible: " + bank.length);
+        }
+      }
+
       const maxCount = Math.max(1, bank.length || 1);
-      const count = clampInt(state.config.count, 1, maxCount, Math.min(10, maxCount));
+      const count = (mode === "millionaire")
+        ? clampInt(15, 1, maxCount, Math.min(15, maxCount))
+        : clampInt(state.config.count, 1, maxCount, Math.min(10, maxCount));
 
       const pin = (state.config.pin || "").trim();
-       const isPractice = !!state.config.isPractice;
+       const isPractice = (mode === "practice");
        const lockResults = (!isPractice) && (!!state.config.lockResults) && (pin.length >= 4);
        const pinHash = lockResults ? fnv1a64("PIN|" + pin).toString(16).padStart(16, "0").toUpperCase() : "";
 
@@ -1307,21 +1490,1697 @@ No muestres nada más (sin listas, sin comentarios, sin formato alterno).`;
           regionLine1: "SENA Regional Tolima",
           regionLine2: "Centro de Comercio y Servicios",
           count,
-          optionsCount: state.config.optionsCount,
+          mode,
+          optionsCount: (mode === "millionaire") ? 4 : state.config.optionsCount,
           isPractice,
           // En modo práctica el aprendiz decide estos parámetros al inicio.
-          partialMultiplePoints: isPractice ? false : !!state.config.partialMultiplePoints,
-          hasTimer: isPractice ? false : !!state.config.hasTimer,
-          timeLimit: isPractice ? 30 : state.config.timeLimit,
-          sequentialMode: isPractice ? true : !!state.config.sequentialMode,
+          partialMultiplePoints: (mode === "evaluation" && (Number(state.config.optionsCount || 4) >= 4) && (Number(state.config.optionsCount || 4) <= 6)) ? !!state.config.partialMultiplePoints : false,
+          hasTimer: (mode === "millionaire") ? false : (isPractice ? false : !!state.config.hasTimer),
+          timeLimit: (mode === "millionaire") ? 30 : (isPractice ? 30 : state.config.timeLimit),
+          sequentialMode: (mode === "millionaire") ? true : (isPractice ? true : !!state.config.sequentialMode),
           shuffleQuestions: state.config.shuffleQuestions,
           shuffleOptions: state.config.shuffleOptions,
-          lockResults,
-          pinHash,
+          lockResults: (mode === "millionaire") ? false : lockResults,
+          pinHash: (mode === "millionaire") ? "" : pinHash,
           generatedAt: new Date().toISOString()
         },
         QUESTIONS_BANK: bank
       };
+    }
+
+    /** ============================
+     *  Generación HTML - Modo Millonario
+     *  ============================ */
+    function generateMillionaireHtml(quizPack) {
+      const SCR = "<scr" + "ipt";
+      const ESCR = "</scr" + "ipt>";
+      const cfg = quizPack.CONFIG_DATA || {};
+      const title = escapeHtml(cfg.title || "QUIÉN QUIERE SER MILLONARIO");
+      const instructor = escapeHtml(cfg.instructor || "");
+      const theme = escapeHtml(cfg.theme || "");
+      const count = clampInt(cfg.count, 1, 15, 15);
+
+      // Tabla de premios (1..15)
+      const ladder = [
+        { n: 15, v: "1.000.000", safe: true  },
+        { n: 14, v: "500.000", safe: false },
+        { n: 13, v: "250.000", safe: false },
+        { n: 12, v: "125.000", safe: false },
+        { n: 11, v: "64.000", safe: false },
+        { n: 10, v: "32.000", safe: true  },
+        { n: 9,  v: "16.000", safe: false },
+        { n: 8,  v: "8.000",  safe: false },
+        { n: 7,  v: "4.000",  safe: false },
+        { n: 6,  v: "2.000",  safe: false },
+        { n: 5,  v: "1.000",  safe: true  },
+        { n: 4,  v: "500",    safe: false },
+        { n: 3,  v: "300",    safe: false },
+        { n: 2,  v: "200",    safe: false },
+        { n: 1,  v: "100",    safe: false }
+      ];
+
+      // El banco en modo millonario ya viene filtrado (única respuesta y >=3 incorrectas)
+      const bank = Array.isArray(quizPack.QUESTIONS_BANK) ? quizPack.QUESTIONS_BANK.slice() : [];
+
+      return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${title}</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" referrerpolicy="no-referrer" />
+  <style>
+    :root{
+      --bg1:#000033;
+      --bg2:#000066;
+      --ink:#ffffff;
+      --muted:rgba(255,255,255,.75);
+      --line:rgba(147,197,253,.45);
+      --metal:rgba(226,232,240,.55);
+      --sel:#f59e0b;
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --safe:#f97316;
+    }
+    *{ box-sizing:border-box; }
+    body{ margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial; background: radial-gradient(circle at 50% 35%, var(--bg2), var(--bg1)); color:var(--ink); min-height:100vh; }
+    .wrap{ max-width:1100px; margin:0 auto; padding:24px 16px 40px; }
+    .top{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .logo{ width:44px; height:44px; border-radius:14px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; }
+    .title{ font-weight:900; letter-spacing:.18em; font-size:12px; text-transform:uppercase; color:var(--muted); }
+    .meta{ font-weight:800; font-size:12px; color:rgba(255,255,255,.8); }
+    .grid{ margin-top:18px; display:grid; grid-template-columns: 1fr 260px; gap:16px; }
+    @media (max-width: 920px){ .grid{ grid-template-columns:1fr; } .ladder{ order:-1; } }
+
+    .panel{ position:relative; border-radius: 24px; border:1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.18); box-shadow: 0 24px 70px rgba(0,0,0,.35); overflow:hidden; }
+    .panel::before{ content:""; position:absolute; inset:-30%; background: radial-gradient(circle at 50% 40%, rgba(255,255,255,.10), transparent 55%); filter: blur(0px); }
+    .panel-inner{ position:relative; padding:18px; }
+
+    .lifelines{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .life{ width:46px; height:46px; border-radius:999px; border:1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.22); color:#fff; display:flex; align-items:center; justify-content:center; font-size:18px; cursor:pointer; transition:.15s ease; }
+    .life:hover{ transform: translateY(-1px); background: rgba(255,255,255,.08); }
+    .life[disabled]{ opacity:.35; cursor:not-allowed; transform:none; }
+
+    .question{ margin-top:14px; padding:16px 16px; border:1px solid var(--line); background: rgba(0,0,0,.28); border-radius: 18px; clip-path: polygon(4% 0,96% 0,100% 50%,96% 100%,4% 100%,0 50%); }
+    .qtext{ font-weight:900; font-size:18px; line-height:1.25; text-align:center; }
+    .opts{ margin-top:14px; display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    @media (max-width: 640px){ .opts{ grid-template-columns:1fr; } }
+    .opt{ padding:14px 16px; border:1px solid var(--line); background: rgba(0,0,0,.22); border-radius: 18px; clip-path: polygon(6% 0,94% 0,100% 50%,94% 100%,6% 100%,0 50%); cursor:pointer; transition:.15s ease; display:flex; gap:10px; align-items:flex-start; }
+    .opt:hover{ background: rgba(255,255,255,.07); }
+    .badge{ font-weight:900; letter-spacing:.12em; color: var(--sel); min-width:24px; }
+    .otext{ font-weight:800; color: rgba(255,255,255,.92); }
+
+    /* Ajuste 1: selección debe pintarse completa de naranja (estilo juego) */
+    .opt.sel{
+      background: rgba(245,158,11,.28);
+      border-color: rgba(245,158,11,.90);
+      box-shadow: 0 0 0 3px rgba(245,158,11,.20);
+    }
+    .opt.sel .badge{ color: rgba(255,255,255,.92); }
+
+    /* Última palabra correcta: verde total */
+    .opt.ok{
+      background: rgba(34,197,94,.22);
+      border-color: rgba(34,197,94,.95);
+      box-shadow: 0 0 0 3px rgba(34,197,94,.18);
+    }
+    .opt.ok .badge{ color: rgba(255,255,255,.92); }
+
+    /* Última palabra incorrecta: la correcta queda en verde parpadeante */
+    @keyframes qs-green-blink{ 0%,100%{ filter: brightness(1); } 50%{ filter: brightness(1.45); } }
+    .opt.blink-ok{ animation: qs-green-blink 700ms ease-in-out infinite; }
+
+    /* Mantener compatibilidad si alguna rama antigua usa .bad */
+    .opt.bad{ border-color: rgba(239,68,68,.9); box-shadow: 0 0 0 3px rgba(239,68,68,.18); }
+    .opt.hidden{ display:none; }
+
+    .actions{ margin-top:16px; display:flex; gap:12px; flex-wrap:wrap; justify-content:space-between; align-items:center; }
+    .btn{ padding:12px 14px; border-radius:14px; border:1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.22); color:#fff; font-weight:900; letter-spacing:.12em; text-transform:uppercase; font-size:11px; cursor:pointer; }
+    .btn:hover{ background: rgba(255,255,255,.08); }
+    .btn.primary{ background: rgba(245,158,11,.20); border-color: rgba(245,158,11,.55); }
+    .btn.primary:hover{ background: rgba(245,158,11,.28); }
+
+    .ladder{ padding:14px 12px; }
+    .ladder h3{ margin:0 0 10px; font-size:11px; letter-spacing:.18em; text-transform:uppercase; color: rgba(255,255,255,.75); }
+    .step{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; border-radius:12px; border:1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.16); font-weight:900; margin-bottom:8px; }
+    .step .n{ color: rgba(255,255,255,.78); width:34px; }
+    .step .v{ color: rgba(255,255,255,.92); }
+    .step.safe{ border-color: rgba(249,115,22,.45); }
+    .step.active{ background: rgba(245,158,11,.22); border-color: rgba(245,158,11,.55); }
+    .step.win{ background: rgba(34,197,94,.18); border-color: rgba(34,197,94,.45); }
+
+    .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:16px; background: rgba(0,0,0,.55); z-index:50; }
+    .modal.open{ display:flex; }
+    .modal-card{ width:min(520px,92vw); border-radius:20px; border:1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.60); padding:16px; box-shadow: 0 30px 90px rgba(0,0,0,.45); }
+
+
+    .modal-title{ font-weight:900; letter-spacing:.16em; text-transform:uppercase; font-size:12px; color: rgba(255,255,255,.82); }
+
+    /* ===== Ajuste 2: cronómetro grande en llamada ===== */
+    .phoneTimerWrap{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:10px 0 2px; }
+    .phoneBig{ font-weight:900; font-size:96px; line-height:1; letter-spacing:.06em; color: var(--sel); text-shadow: 0 18px 36px rgba(0,0,0,.45); }
+    .phoneSub{ font-weight:900; letter-spacing:.22em; text-transform:uppercase; font-size:11px; color: rgba(255,255,255,.78); }
+    .phoneHint{ margin-top:6px; font-weight:800; color: rgba(255,255,255,.75); text-align:center; }
+
+    /* ===== Ajuste 1 (Retiro/Perder): texto centrado + numero gigante ===== */
+    .resultWrap{ display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:6px; padding:8px 0 2px; }
+    .resultLead{ font-weight:900; font-size:28px; line-height:1.15; color: rgba(255,255,255,.92); }
+    .resultLine{ font-weight:900; font-size:20px; color: rgba(255,255,255,.86); }
+    .resultLabel{ margin-top:6px; font-weight:900; font-size:16px; letter-spacing:.10em; text-transform:uppercase; color: rgba(255,255,255,.70); }
+    .resultValue{ font-weight:900; font-size:92px; line-height:1; color: var(--sel); text-shadow: 0 18px 36px rgba(0,0,0,.45); margin-top:2px; }
+
+    /* ===== Ajuste 3: gráfico público (barras verticales + ejes) ===== */
+    .audWrap{ margin-top:10px; }
+    .audMeta{ text-align:center; font-weight:900; color: rgba(255,255,255,.86); letter-spacing:.08em; }
+    .audChart{ margin-top:10px; display:grid; grid-template-columns: 56px 1fr; gap:10px; align-items:stretch; }
+    .yAxis{ display:flex; flex-direction:column; justify-content:space-between; height:240px; padding:4px 0; }
+    .yTick{ font-weight:900; font-size:11px; color: rgba(255,255,255,.72); text-align:right; }
+    .plot{ position:relative; height:240px; border:1px solid rgba(255,255,255,.18); border-radius:18px; background: rgba(0,0,0,.22); overflow:hidden; }
+    .plot::before{
+      content:""; position:absolute; inset:0;
+      background-image: linear-gradient(to top, rgba(255,255,255,.10) 1px, transparent 1px);
+      background-size: 100% 20%;
+      opacity: .6;
+      pointer-events:none;
+    }
+    .barsGrid{ position:absolute; inset:12px 12px 36px 12px; display:grid; grid-template-columns: repeat(4, 1fr); gap:14px; align-items:end; }
+    .barBox{ position:relative; height:100%; display:flex; align-items:flex-end; justify-content:center; }
+    .barFill{ width:100%; height:0%; border-radius:12px 12px 4px 4px; background: rgba(96,165,250,.92); border: 1px solid rgba(245,158,11,.35); box-shadow: 0 18px 40px rgba(0,0,0,.35); transition: height 3.6s cubic-bezier(.2,.9,.2,1); }
+    .barFill.correct{ 
+      background: linear-gradient(180deg, rgba(245,158,11,.95), rgba(245,158,11,.55));
+      border-color: rgba(245,158,11,.75);
+    }
+    .barPct{ position:absolute; bottom: calc(var(--h,0) + 6px); transform: translateY(0); font-weight:900; font-size:12px; color: rgba(255,255,255,.86); text-shadow: 0 10px 20px rgba(0,0,0,.45); }
+
+    .xAxis{ position:absolute; left:12px; right:12px; bottom:6px; display:grid; grid-template-columns: repeat(4, 1fr); gap:14px; }
+    .xLab{ text-align:center; font-weight:900; letter-spacing:.18em; color: var(--sel); }
+
+    /* Texto auxiliar dentro del modal */
+    .audNote{ margin-top:10px; text-align:center; font-weight:800; color: rgba(255,255,255,.78); }
+
+
+
+    /* Ajuste 1: Pantalla de victoria + confetti */
+    #confettiCanvas{ position:fixed; inset:0; width:100vw; height:100vh; z-index:59; pointer-events:none; }
+    #winOverlay{ position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; padding:18px; background: rgba(0,0,0,.72); }
+    #winCard{ width:min(740px,94vw); border-radius:24px; border:1px solid rgba(255,255,255,.20);
+      background: radial-gradient(circle at 50% 20%, rgba(245,158,11,.18), rgba(0,0,0,.62) 58%);
+      box-shadow: 0 40px 120px rgba(0,0,0,.55);
+      padding: 22px 18px; text-align:center; position:relative;
+    }
+    #winTitle{ font-weight:900; letter-spacing:.22em; text-transform:uppercase; font-size:14px; color: rgba(255,255,255,.86); }
+    #winTrophy{ font-size:92px; line-height:1; margin: 10px 0 6px; filter: drop-shadow(0 18px 26px rgba(0,0,0,.45)); }
+    #winTrophy i{ color: rgba(245,158,11,.95); }
+    #winPrize{ margin-top:6px; font-weight:900; font-size:18px; }
+    #winSub{ margin-top:8px; font-weight:800; color: rgba(255,255,255,.78); }
+    #winActions{ margin-top:16px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+
+    
+
+    /* Pantalla de derrota (persistente) */
+    #loseOverlay{ position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; padding:18px; background: rgba(0,0,0,.72); }
+    #loseCard{ width:min(740px,94vw); border-radius:24px; border:1px solid rgba(255,255,255,.20);
+      background: radial-gradient(circle at 50% 20%, rgba(239,68,68,.14), rgba(0,0,0,.62) 58%);
+      box-shadow: 0 40px 120px rgba(0,0,0,.55);
+      padding: 22px 18px; text-align:center; position:relative;
+    }
+    #loseTitle{ font-weight:900; letter-spacing:.22em; text-transform:uppercase; font-size:14px; color: rgba(255,255,255,.86); }
+    #loseIcon{ font-size:86px; line-height:1; margin: 10px 0 6px; filter: drop-shadow(0 18px 26px rgba(0,0,0,.45)); }
+    #loseIcon i{ color: rgba(239,68,68,.92); }
+    #losePrizeLabel{ margin-top:10px; font-weight:900; letter-spacing:.14em; text-transform:uppercase; font-size:12px; color: rgba(255,255,255,.78); }
+    #losePrize{ margin-top:8px; font-weight:900; font-size:44px; line-height:1.05; color: rgba(245,158,11,.95); text-shadow: 0 20px 40px rgba(0,0,0,.45); }
+    #loseMeta{ margin-top:10px; font-weight:800; color: rgba(255,255,255,.80); }
+    #loseActions{ margin-top:16px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+
+/* Pantalla de retiro (más dramática) */
+    #walkOverlay{ position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; padding:18px; background: rgba(0,0,0,.72); }
+    #walkCard{ width:min(740px,94vw); border-radius:24px; border:1px solid rgba(255,255,255,.20);
+      background: radial-gradient(circle at 50% 20%, rgba(34,197,94,.12), rgba(0,0,0,.62) 58%);
+      box-shadow: 0 40px 120px rgba(0,0,0,.55);
+      padding: 22px 18px; text-align:center; position:relative;
+    }
+    #walkTitle{ font-weight:900; letter-spacing:.22em; text-transform:uppercase; font-size:14px; color: rgba(255,255,255,.86); }
+    #walkPrizeLabel{ margin-top:14px; font-weight:900; letter-spacing:.14em; text-transform:uppercase; font-size:12px; color: rgba(255,255,255,.78); }
+    #walkPrize{ margin-top:8px; font-weight:900; font-size:44px; line-height:1.05; color: rgba(34,197,94,.95); text-shadow: 0 20px 40px rgba(0,0,0,.45); }
+    #walkSafe{ margin-top:12px; font-weight:800; color: rgba(255,255,255,.80); }
+    #walkSafe b{ color: rgba(249,115,22,.95); }
+    #walkActions{ margin-top:16px; display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+
+    @keyframes qs-trophy-pop{ 0%{ transform: translateY(14px) scale(.85); opacity:0; } 60%{ transform: translateY(0) scale(1.05); opacity:1; } 100%{ transform: translateY(0) scale(1); } }
+    .qs-trophy-pop{ animation: qs-trophy-pop 720ms cubic-bezier(.2,.9,.2,1) both; }
+
+    /* ===== UI Ajustes (Millonario) ===== */
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background: repeating-conic-gradient(from 0deg, rgba(255,255,255,.06) 0 8deg, transparent 8deg 16deg);
+      opacity:.10;
+      mix-blend-mode: overlay;
+      pointer-events:none;
+    }
+
+    /* Layout más parecido al show */
+    .wrap{ max-width:1200px; }
+    .grid{ grid-template-columns: 1fr 230px; gap:18px; }
+    @media (max-width: 920px){ .grid{ grid-template-columns:1fr; } }
+
+    /* Top más limpio (sin ayudas arriba) */
+    .top{ justify-content:flex-start; }
+
+    /* Caja principal */
+    .panel-inner{ padding:20px 22px; }
+
+    /* Encabezado de pregunta */
+    #qHeader{ font-size:12px !important; color: rgba(255,255,255,.84) !important; margin-top:2px; }
+
+    /* Pregunta más grande, centrada, con borde más marcado */
+    .question{
+      margin-top:14px;
+      padding:22px 22px;
+      border:2px solid rgba(147,197,253,.55);
+      background: linear-gradient(180deg, rgba(0,0,0,.30), rgba(0,0,0,.18));
+      border-radius: 22px;
+      box-shadow: 0 26px 70px rgba(0,0,0,.35);
+      clip-path: polygon(4% 0,96% 0,100% 50%,96% 100%,4% 100%,0 50%);
+    }
+    .qtext{ font-size:22px; line-height:1.18; }
+
+    /* Divisor central (como en la imagen) */
+    .panel-inner::after{
+      content:"";
+      position:absolute;
+      left:50%;
+      top: 210px;
+      bottom: 84px;
+      width:2px;
+      background: rgba(96,165,250,.25);
+      transform: translateX(-1px);
+      border-radius: 999px;
+      pointer-events:none;
+    }
+    @media (max-width: 640px){ .panel-inner::after{ display:none; } }
+
+    /* Opciones con forma y tamaño similar */
+    .opts{ margin-top:16px; gap:16px; }
+    .opt{
+      padding:18px 18px;
+      min-height:72px;
+      align-items:center;
+      border:2px solid rgba(147,197,253,.50);
+      background: linear-gradient(180deg, rgba(0,0,0,.26), rgba(0,0,0,.12));
+      border-radius: 22px;
+      clip-path: polygon(6% 0,94% 0,100% 50%,94% 100%,6% 100%,0 50%);
+      box-shadow: 0 18px 55px rgba(0,0,0,.28);
+    }
+    .opt:hover{ background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(0,0,0,.12)); }
+    .badge{ font-size:18px; color: var(--sel); min-width:30px; }
+    .otext{ font-size:14px; font-weight:900; }
+
+    /* Selección estilo show */
+    .opt.sel{ background: rgba(245,158,11,.22); border-color: rgba(245,158,11,.95); }
+
+    /* ===== Ajuste 3 del usuario: Lifelines abajo y más grandes ===== */
+    .lifelines-bottom{ margin-top:16px; justify-content:center; gap:14px; }
+    .lifelines-bottom .life{
+      width:70px;
+      height:58px;
+      border-radius:18px;
+      font-size:22px;
+      background: rgba(0,0,0,.26);
+      border:2px solid rgba(147,197,253,.35);
+      box-shadow: 0 18px 45px rgba(0,0,0,.30);
+    }
+
+    /* Escalera: más compacta y resaltado fuerte */
+    .ladder{ padding:12px 10px; }
+    .ladder h3{ text-align:left; }
+    .step{ padding:8px 10px; border-radius:10px; margin-bottom:7px; }
+    .step .n{ width:26px; font-size:12px; }
+    .step .v{ font-size:12px; }
+    .step.active{ background: rgba(245,158,11,.92); border-color: rgba(245,158,11,.92); }
+    .step.active .n, .step.active .v{ color: rgba(0,0,0,.78); }
+    .step.safe{ border-color: rgba(245,158,11,.35); }
+    .step.win{ background: rgba(0,0,0,.18); border-color: rgba(255,255,255,.10); opacity:.85; }
+
+    /* ===== Showmanship (solo modo Millonario) ===== */
+    @keyframes qs-q-enter{ 0%{ opacity:0; transform: scale(.985); filter: blur(.6px);} 100%{ opacity:1; transform: scale(1); filter: blur(0);} }
+    .qs-q-enter{ animation: qs-q-enter 420ms cubic-bezier(.2,.9,.2,1) both; }
+
+    @keyframes qs-opt-enter{ 0%{ opacity:0; transform: translateY(10px) scale(.985); filter: blur(1px);} 100%{ opacity:1; transform: translateY(0) scale(1); filter: blur(0);} }
+    .qs-opt-enter{ animation: qs-opt-enter 380ms cubic-bezier(.2,.9,.2,1) both; }
+
+    @keyframes qs-reveal{ 0%,100%{ box-shadow: 0 0 0 0 rgba(245,158,11,.0); } 50%{ box-shadow: 0 0 0 6px rgba(245,158,11,.22); } }
+    .opt.reveal{ animation: qs-reveal 720ms ease-in-out infinite; }
+
+    .qs-clicklock{ pointer-events:none !important; }
+
+    /* Confirmación "Última palabra" */
+    .confirm{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:16px; background: rgba(0,0,0,.55); z-index:70; }
+    .confirm.open{ display:flex; }
+    .confirm-card{ width:min(520px,92vw); border-radius:20px; border:1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.72); padding:16px; box-shadow: 0 30px 90px rgba(0,0,0,.55); transform: translateY(10px) scale(.98); opacity:0; }
+    .confirm.open .confirm-card{ animation: qs-confirm-in 240ms cubic-bezier(.2,.9,.2,1) both; }
+    @keyframes qs-confirm-in{ from{ opacity:0; transform: translateY(10px) scale(.98);} to{ opacity:1; transform: translateY(0) scale(1);} }
+    .confirm-title{ font-weight:900; letter-spacing:.16em; text-transform:uppercase; font-size:12px; color: rgba(255,255,255,.86); }
+    .confirm-body{ margin-top:10px; font-weight:800; color: rgba(255,255,255,.86); text-align:center; }
+    .confirm-text{ margin-top:6px; font-weight:800; color: rgba(255,255,255,.78); text-align:center; }
+    .confirm-actions{ margin-top:14px; display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; }
+
+    /* Controles de audio */
+    .audioCtl{ margin-left:auto; display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:16px; border:1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.18); }
+    .audBtn{ width:38px; height:34px; border-radius:12px; border:1px solid rgba(255,255,255,.16); background: rgba(0,0,0,.22); color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .audBtn:hover{ background: rgba(255,255,255,.08); }
+    .audSlider{ width:120px; accent-color: rgba(245,158,11,.95); }
+    @media (max-width: 640px){ .audSlider{ width:90px; } }
+
+    /* Accesibilidad: foco visible */
+    .opt.kbfocus{ outline: 3px solid rgba(255,255,255,.92); outline-offset: 3px; }
+    .opt:focus-visible,
+    .btn:focus-visible,
+    .life:focus-visible,
+    .audBtn:focus-visible{
+      outline: 3px solid rgba(255,255,255,.92);
+      outline-offset: 3px;
+    }
+
+    /* Modo alto contraste (toggle) */
+    body.hc{
+      --bg1:#000000;
+      --bg2:#000000;
+      --ink:#ffffff;
+      --muted:#ffffff;
+      --line:rgba(255,255,255,.78);
+      --metal:rgba(255,255,255,.72);
+      --sel:#ffd400;
+      --ok:#00ff4c;
+      --bad:#ff2b2b;
+      --safe:#ff8a00;
+    }
+    body.hc .panel{ border-color: rgba(255,255,255,.55); }
+    body.hc .audioCtl{ border-color: rgba(255,255,255,.35); }
+    body.hc .opt{ border-color: rgba(255,255,255,.65); background: rgba(0,0,0,.22); }
+    body.hc .step{ border-color: rgba(255,255,255,.45); }
+    body.hc .step.safe{ border-color: rgba(255,255,255,.65); }
+
+    /* Reporte final */
+    /* Reporte final (estilo más profesional) */
+    .reportWrap{ margin-top:14px; padding:14px; border-radius:18px; border:1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); }
+    .reportHead{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+    .reportTag{ font-weight:900; letter-spacing:.22em; text-transform:uppercase; font-size:11px; color: rgba(255,255,255,.78); }
+    .reportTitle{ font-weight:900; font-size:22px; line-height:1.1; margin-top:6px; }
+    .reportSub{ font-weight:800; color: rgba(255,255,255,.74); margin-top:4px; }
+    .reportGrid{ margin-top:12px; display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px; }
+    @media (max-width:560px){ .reportGrid{ grid-template-columns:1fr; } }
+    .reportItem{ padding:10px 12px; border-radius:14px; border:1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.22); }
+    .reportItem .k{ font-weight:900; letter-spacing:.14em; text-transform:uppercase; font-size:10px; color: rgba(255,255,255,.72); }
+    .reportItem .v{ margin-top:6px; font-weight:900; font-size:18px; color: rgba(255,255,255,.92); }
+    .reportPills{ margin-top:10px; display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
+    .reportPill{ padding:8px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.18); font-weight:900; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color: rgba(255,255,255,.85); white-space:nowrap; }
+    .reportPill.off{ opacity:.55; }
+    .reportActions{ margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+    .reportActions .btn{ padding:10px 12px; }
+
+    /* Impresión: mostrar solo el reporte final (ideal para Guardar como PDF) */
+    @media print{
+      body{ background:#fff !important; color:#000 !important; }
+      .wrap, .grid, .panel, .ladder, .top, .modal{ display:none !important; }
+      #confettiCanvas{ display:none !important; }
+      #winOverlay, #loseOverlay, #walkOverlay{ position:static !important; inset:auto !important; background:#fff !important; display:block !important; }
+      #winCard, #loseCard, #walkCard{ background:#fff !important; color:#000 !important; border:none !important; box-shadow:none !important; }
+      .reportWrap{ border:1px solid #e5e7eb !important; background:#fff !important; }
+      .reportItem{ border:1px solid #e5e7eb !important; background:#fff !important; }
+      .reportTag, .reportSub, .reportItem .k{ color:#334155 !important; }
+      .reportTitle{ color:#000 !important; text-shadow:none !important; }
+      .reportActions, .btn{ display:none !important; }
+    }
+
+    /* Escalera: zona segura alcanzada, próximo objetivo y pulse */
+    /* Zonas seguras visibles (5, 10, 15) */
+    .step.safe{ position:relative; }
+    .step.safe::after{ content:""; position:absolute; left:-1px; top:6px; bottom:6px; width:4px; border-radius:10px; background: rgba(249,115,22,.35); }
+    .step.safe-hit::after{ display:none; }
+    .step .safeIcon{ margin-left:8px; color: rgba(249,115,22,.85); font-size:11px; opacity:.95; }
+
+    .step.safe-hit{ position:relative; border-color: rgba(249,115,22,.92) !important; }
+    .step.safe-hit::before{ content:""; position:absolute; left:-1px; top:6px; bottom:6px; width:6px; border-radius:10px; background: rgba(249,115,22,.88); }
+    .step .lock{ margin-left:8px; color: rgba(255,255,255,.85); font-size:11px; opacity:.9; }
+    .step.next{ box-shadow: 0 0 0 3px rgba(96,165,250,.16), 0 0 22px rgba(245,158,11,.10); }
+    @keyframes qs-step-pulse{ 0%{ transform: scale(1); } 40%{ transform: scale(1.03); } 100%{ transform: scale(1); } }
+    .step.pulse{ animation: qs-step-pulse 420ms ease-out both; }
+
+
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <div class="logo"><i class="fa-solid fa-circle-question"></i></div>
+        <div>
+          <div class="title">${title}</div>
+          <div class="meta">${theme ? ("Tema: " + theme + " · ") : ""}${instructor ? ("Instructor: " + instructor) : ""}</div>
+        </div>
+      </div>
+      <div class="audioCtl" aria-label="Audio">
+        <button id="btnMute" class="audBtn" type="button" title="Silenciar/Activar">
+          <i id="muteIcon" class="fa-solid fa-volume-high" aria-hidden="true"></i>
+        </button>
+        <button id="btnContrast" class="audBtn" type="button" title="Alto contraste" aria-pressed="false">
+          <i class="fa-solid fa-circle-half-stroke" aria-hidden="true"></i>
+        </button>
+        <input id="volSlider" class="audSlider" type="range" min="0" max="100" step="1" value="65" aria-label="Volumen" />
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="panel">
+        <div class="panel-inner">
+          <div style="display:flex; justify-content:center; margin-bottom:10px;">
+            <img src="https://www.sena.edu.co/Paginas/img/logo-sena-blanco.png" alt="SENA" style="height:64px; width:auto; max-width:80%; object-fit:contain; filter: drop-shadow(0 18px 22px rgba(0,0,0,.45));" />
+          </div>
+          <div id="qHeader" class="meta" style="text-align:center; letter-spacing:.18em; text-transform:uppercase; font-weight:900;">Pregunta <span id="qNum">1</span> de ${count}</div>
+          <div id="qPanel" class="question"><div id="qText" class="qtext">—</div></div>
+          <div id="opts" class="opts"></div>
+          <div class="lifelines lifelines-bottom">
+            <button id="life5050" class="life" title="50:50"><span style="font-weight:900">50</span></button>
+            <button id="lifePhone" class="life" title="Llamada"><i class="fa-solid fa-phone"></i></button>
+            <button id="lifeAudience" class="life" title="Público"><i class="fa-solid fa-users"></i></button>
+            <button id="lifeSwitch" class="life" title="Cambio"><i class="fa-solid fa-rotate"></i></button>
+          </div>
+          <div class="actions">
+            <button id="btnFinal" class="btn primary">Última palabra</button>
+            <div class="meta" id="moneyNow" style="font-weight:900">Premio actual: 0</div>
+            <button id="btnWalk" class="btn">Retirarse</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel ladder">
+        <div class="panel-inner">
+          <h3>Escalera de premios</h3>
+          <div id="ladder"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal" class="modal" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-title" id="modalTitle">Ayuda</div>
+      <div id="modalBody" class="meta" style="margin-top:10px; font-weight:800;"></div>
+      <div style="margin-top:14px; display:flex; justify-content:flex-end;">
+        <button id="btnCloseModal" class="btn">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirm" class="confirm" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="confirm-card">
+      <div class="confirm-title">¿Última palabra?</div>
+      <div class="confirm-body">Confirmas tu respuesta: <b id="confirmLetter">—</b></div>
+      <div id="confirmText" class="confirm-text"></div>
+      <div class="confirm-actions">
+        <button id="btnConfirmYes" class="btn primary" type="button">Sí</button>
+        <button id="btnConfirmNo" class="btn" type="button">No</button>
+      </div>
+    </div>
+  </div>
+
+
+  ${SCR}>
+  (function(){
+    const CONFIG = ${JSON.stringify(cfg)};
+    const BANK = ${JSON.stringify(bank)};
+    const LADDER = ${JSON.stringify(ladder)};
+
+    const $ = (id) => document.getElementById(id);
+    const shuffle = (arr) => { for (let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; };
+    const firstCell = (v) => {
+      const raw = (v ?? "").toString().trim();
+      if (!raw) return "";
+      if (!raw.includes(";")) return raw;
+      return raw.split(";").map(s=>s.trim()).filter(Boolean)[0] || "";
+    };
+
+    // ===== Audio (Web Audio, sin archivos externos) + persistencia =====
+    const audio = (function(){
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const KEY = 'qs_mill_audio_v1';
+      let ctx = null;
+      let master = null;
+      let comp = null;
+      let vol = 0.65;
+      let muted = false;
+      let unlocked = false;
+      const last = Object.create(null);
+
+      function load(){
+        try {
+          const raw = localStorage.getItem(KEY);
+          if (!raw) return;
+          const s = JSON.parse(raw);
+          if (typeof s.vol === 'number') vol = Math.max(0, Math.min(1, s.vol));
+          if (typeof s.muted === 'boolean') muted = s.muted;
+        } catch(e){}
+      }
+      function save(){
+        try { localStorage.setItem(KEY, JSON.stringify({ vol: vol, muted: muted })); } catch(e){}
+      }
+
+      function ensure(){
+        if (!AudioCtx) return false;
+        if (!unlocked) return false;
+        if (!ctx){
+          ctx = new AudioCtx();
+          comp = ctx.createDynamicsCompressor();
+          // limitador suave
+          comp.threshold.setValueAtTime(-18, ctx.currentTime);
+          comp.knee.setValueAtTime(22, ctx.currentTime);
+          comp.ratio.setValueAtTime(8, ctx.currentTime);
+          comp.attack.setValueAtTime(0.01, ctx.currentTime);
+          comp.release.setValueAtTime(0.16, ctx.currentTime);
+
+          master = ctx.createGain();
+          comp.connect(master);
+          master.connect(ctx.destination);
+          applyGain();
+        }
+        if (ctx && ctx.state === 'suspended') {
+          try { ctx.resume(); } catch(e){}
+        }
+        return true;
+      }
+
+      function unlock(){
+        unlocked = true;
+        ensure();
+        applyGain();
+      }
+
+      function applyGain(){
+        if (!master) return;
+        master.gain.setValueAtTime(muted ? 0.0 : vol, (ctx ? ctx.currentTime : 0));
+      }
+
+      function setVol(v){
+        vol = Math.max(0, Math.min(1, v));
+        ensure();
+        applyGain();
+        save();
+      }
+      function setMuted(m){
+        muted = !!m;
+        ensure();
+        applyGain();
+        save();
+        updateMuteIcon();
+      }
+      function toggleMute(){ setMuted(!muted); }
+
+      function canPlay(key, minMs){
+        const t = last[key] || 0;
+        const now = performance.now();
+        if (now - t < minMs) return false;
+        last[key] = now;
+        return true;
+      }
+
+      function tone(freqA, freqB, dur, type, gain){
+        ensure();
+        if (!ctx || !comp) return;
+        const now = ctx.currentTime;
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = type || 'triangle';
+        o.frequency.setValueAtTime(freqA, now);
+        if (freqB && freqB !== freqA) {
+          o.frequency.exponentialRampToValueAtTime(Math.max(1, freqB), now + Math.max(0.02, dur));
+        }
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(Math.max(0.0001, gain || 0.08), now + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + Math.max(0.04, dur));
+        o.connect(g);
+        g.connect(comp);
+        o.start(now);
+        o.stop(now + Math.max(0.06, dur) + 0.03);
+      }
+
+      function tension(ms){
+        if (!canPlay('tension', 120)) return;
+        ensure();
+        if (!ctx || !comp) return;
+        const now = ctx.currentTime;
+        const dur = Math.max(0.18, Math.min(1.6, (ms||700)/1000));
+
+        const o = ctx.createOscillator();
+        const lfo = ctx.createOscillator();
+        const lfoG = ctx.createGain();
+        const g = ctx.createGain();
+
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(160, now);
+        o.frequency.exponentialRampToValueAtTime(210, now + dur*0.55);
+        o.frequency.exponentialRampToValueAtTime(170, now + dur);
+
+        lfo.type = 'triangle';
+        lfo.frequency.setValueAtTime(7.5, now);
+        lfoG.gain.setValueAtTime(0.35, now);
+        lfo.connect(lfoG);
+        lfoG.connect(g.gain);
+
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.09, now + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+        o.connect(g);
+        g.connect(comp);
+
+        o.start(now);
+        lfo.start(now);
+        o.stop(now + dur + 0.02);
+        lfo.stop(now + dur + 0.02);
+      }
+
+      function hover(){ if (canPlay('hover', 70)) tone(1400, 1200, 0.02, 'triangle', 0.03); }
+      function select(){ if (canPlay('select', 90)) tone(920, 520, 0.05, 'square', 0.08); }
+      function confirm(){ if (canPlay('confirm', 120)) tone(660, 880, 0.06, 'triangle', 0.06); }
+      function correct(){ if (canPlay('correct', 160)) tone(520, 740, 0.14, 'triangle', 0.11); }
+      function wrong(){ if (canPlay('wrong', 160)) tone(420, 220, 0.18, 'sawtooth', 0.10); }
+
+      function win(){
+        ensure();
+        if (!ctx || !comp) return;
+        const now = ctx.currentTime;
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((f, i) => { tone(f, f, 0.22, 'triangle', 0.22); });
+        // acorde final (ligero)
+        setTimeout(() => {
+          notes.forEach((f) => { tone(f, f, 0.45, 'sawtooth', 0.14); });
+        }, 260);
+      }
+
+      function lose(){
+        ensure();
+        if (!ctx || !comp) return;
+        tone(392.00, 392.00, 0.18, 'square', 0.14);
+        setTimeout(() => tone(329.63, 329.63, 0.20, 'square', 0.14), 150);
+        setTimeout(() => tone(261.63, 261.63, 0.42, 'sawtooth', 0.18), 320);
+      }
+
+      function processing(durationMs){
+        ensure();
+        if (!ctx || !comp) return;
+        const start = ctx.currentTime;
+        const end = start + Math.max(0.3, (durationMs||900)/1000);
+        let t = start;
+        while (t < end){
+          const f = 420 + Math.random()*820;
+          // beep suave
+          const o = ctx.createOscillator();
+          const g = ctx.createGain();
+          o.type = 'triangle';
+          o.frequency.setValueAtTime(f, t);
+          g.gain.setValueAtTime(0.0001, t);
+          g.gain.exponentialRampToValueAtTime(0.06, t + 0.008);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+          o.connect(g);
+          g.connect(comp);
+          o.start(t);
+          o.stop(t + 0.08);
+          t += 0.07 + Math.random()*0.05;
+        }
+      }
+
+      function updateMuteIcon(){
+        const ic = document.getElementById('muteIcon');
+        if (!ic) return;
+        ic.className = muted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high';
+      }
+
+      load();
+      return {
+        init: unlock,
+        unlock: unlock,
+        setVol: setVol,
+        setMuted: setMuted,
+        toggleMute: toggleMute,
+        hover: hover,
+        select: select,
+        confirm: confirm,
+        tension: tension,
+        correct: correct,
+        wrong: wrong,
+        win: win,
+        lose: lose,
+        processing: processing,
+        getState: () => ({ vol: vol, muted: muted })
+      };
+    })();
+
+    // Activar audio con el primer gesto del usuario (políticas de autoplay)
+    document.addEventListener('pointerdown', () => { try { audio.unlock ? audio.unlock() : audio.init(); } catch(e){} }, { once:true, passive:true });
+    document.addEventListener('keydown', () => { try { audio.unlock ? audio.unlock() : audio.init(); } catch(e){} }, { once:true });
+
+    function syncAudioUI(){
+      const s = audio.getState ? audio.getState() : { vol: 0.65, muted: false };
+      const vs = document.getElementById('volSlider');
+      if (vs){
+        vs.value = String(Math.round((s.vol || 0) * 100));
+        vs.addEventListener('input', () => { try { audio.setVol(parseInt(vs.value, 10)/100); } catch(e){} });
+      }
+      const bm = document.getElementById('btnMute');
+      if (bm){
+        bm.addEventListener('click', () => { try { audio.toggleMute(); } catch(e){} });
+      }
+      // icono
+      try {
+        const ic = document.getElementById('muteIcon');
+        if (ic) ic.className = (s.muted ? 'fa-solid fa-volume-xmark' : 'fa-solid fa-volume-high');
+      } catch(e){}
+    }
+
+
+
+
+    // ==============================
+    // Accesibilidad: alto contraste (persistente)
+    // ==============================
+    function applyHighContrast(on){
+      const v = !!on;
+      document.body.classList.toggle('hc', v);
+      const btn = document.getElementById('btnContrast');
+      if (btn) btn.setAttribute('aria-pressed', v ? 'true' : 'false');
+      try { localStorage.setItem('mm_hc', v ? '1' : '0'); } catch(e){}
+    }
+    function toggleHighContrast(){
+      applyHighContrast(!document.body.classList.contains('hc'));
+    }
+    function initHighContrast(){
+      let saved = false;
+      try { saved = (localStorage.getItem('mm_hc') === '1'); } catch(e){}
+      applyHighContrast(saved);
+      const btn = document.getElementById('btnContrast');
+      if (btn) btn.addEventListener('click', () => toggleHighContrast());
+    }
+
+    // Selección de 15 preguntas (o count) desde el banco
+    let pool = BANK.map(q => ({
+      pregunta: (q.pregunta ?? "").toString().trim(),
+      correcta: firstCell((q.correctas||[])[0]),
+      incorrectas: (q.incorrectas||[]).map(firstCell).filter(Boolean)
+    })).filter(q => q.pregunta && q.correcta && q.incorrectas.length >= 3);
+    shuffle(pool);
+    pool = pool.slice(0, ${count});
+
+    // Estado
+    const st = {
+      idx: 0,
+      correctCount: 0,
+      startedAt: performance.now(),
+      endedAt: 0,
+      selected: null,
+      locked: false,
+      confirmOpen: false,
+      clickBlockUntil: 0,
+      used5050: false,
+      usedPhone: false,
+      usedAudience: false,
+      usedSwitch: false,
+      safeReached: 0,      // monto seguro alcanzado (string)
+      safeStepReached: 0,  // escalón seguro alcanzado (5, 10 o 15)
+      currentAward: 0,     // monto en curso (pregunta anterior superada)
+      pulseN: 0            // escalón a pulsar al subir
+    };
+    // UI ladder
+    const ladderEl = $("ladder");
+    function renderLadder(activeN, safeStep, nextN){
+      ladderEl.innerHTML = LADDER.map(s => {
+        const active = (s.n === activeN);
+        const won = (s.n < activeN);
+        const safeHit = (safeStep && s.n === safeStep);
+        const next = (nextN && s.n === nextN);
+        return '<div class="step ' + (s.safe ? 'safe' : '') + ' ' + (active ? 'active' : '') + ' ' + (won ? 'win' : '') + ' ' + (safeHit ? 'safe-hit' : '') + ' ' + (next ? 'next' : '') + '" data-n="' + s.n + '">' +
+                 '<div class="n">' + s.n + '</div>' +
+                 '<div class="v">' + s.v + (s.safe ? ' <i class="fa-solid fa-shield-halved safeIcon" aria-hidden="true"></i>' : '') + (safeHit ? ' <i class="fa-solid fa-lock lock" aria-hidden="true"></i>' : '') + '</div>' +
+               '</div>';
+      }).join('');
+    }
+
+    function moneyForQuestion(n){
+      const row = LADDER.find(x => x.n === n);
+      return row ? row.v : "0";
+    }
+    function safeMoneyUpTo(n){
+      // última zona segura superada (5, 10 y 15)
+      if (n >= 15) return moneyForQuestion(15);
+      if (n >= 10) return moneyForQuestion(10);
+      if (n >= 5) return moneyForQuestion(5);
+      return "0";
+    }
+
+    function randInt(a, b){ return a + Math.floor(Math.random() * (b - a + 1)); }
+
+    function lockOptionsFor(ms){
+      const el = $('opts');
+      const dur = Math.max(0, ms|0);
+      st.clickBlockUntil = performance.now() + dur;
+      if (el) el.classList.add('qs-clicklock');
+      setTimeout(() => {
+        try {
+          if (performance.now() >= st.clickBlockUntil && el) el.classList.remove('qs-clicklock');
+        } catch(e){}
+      }, dur + 40);
+    }
+
+    function applyEntrySequence(){
+      const qPanel = $('qPanel');
+      if (qPanel){
+        qPanel.classList.remove('qs-q-enter');
+        void qPanel.offsetWidth;
+        qPanel.classList.add('qs-q-enter');
+      }
+
+      const opts = Array.from(document.querySelectorAll('.opt'));
+      const total = randInt(800, 3200);
+      const qDur = 420;
+      const stagger = 140;
+      const extra = Math.max(0, total - (qDur + Math.max(0, opts.length - 1) * stagger));
+      opts.forEach((o, i) => {
+        o.classList.add('qs-opt-enter');
+        o.style.animationDelay = String(qDur + extra + i * stagger) + 'ms';
+      });
+    }
+
+    function pulseStep(n){
+      if (!n) return;
+      const el = ladderEl.querySelector('[data-n="' + n + '"]');
+      if (!el) return;
+      el.classList.remove('pulse');
+      void el.offsetWidth;
+      el.classList.add('pulse');
+      setTimeout(() => { try { el.classList.remove('pulse'); } catch(e){} }, 520);
+    }
+
+    function closeConfirm(){
+      st.confirmOpen = false;
+      const c = $('confirm');
+      if (c) c.classList.remove('open');
+    }
+
+    function openConfirm(){
+      const c = $('confirm');
+      if (!c || !st.selected) return false;
+      const badge = st.selected.querySelector('.badge');
+      const otext = st.selected.querySelector('.otext');
+      const letter = badge ? badge.textContent.replace(':','').trim() : '—';
+      const text = otext ? otext.textContent.trim() : '';
+
+      const cl = $('confirmLetter');
+      if (cl) cl.textContent = letter || '—';
+      const ct = $('confirmText');
+      if (ct) ct.textContent = text;
+
+      st.confirmOpen = true;
+      c.classList.add('open');
+      try { audio.confirm(); } catch(e){}
+      try { setTimeout(() => { try { $('btnConfirmYes').focus(); } catch(e){} }, 0); } catch(e){}
+      return true;
+    }
+
+    function render(){
+      const q = pool[st.idx];
+      if (!q) return;
+
+      // cerrar confirmación si quedó abierta
+      try { closeConfirm(); } catch(e){}
+
+      const qN = st.idx + 1;
+      $('qNum').textContent = String(qN);
+      $('qText').textContent = q.pregunta;
+      st.selected = null;
+      st.locked = false;
+
+      // opciones A-D
+      const letters = ['A','B','C','D'];
+      const options = shuffle([
+        { t: q.correcta, ok: true },
+        { t: q.incorrectas[0], ok: false },
+        { t: q.incorrectas[1], ok: false },
+        { t: q.incorrectas[2], ok: false }
+      ]);
+
+      $('opts').innerHTML = options.map((o, i) => {
+        const id = 'opt_' + i;
+        return '<div class="opt" id="' + id + '" data-i="' + i + '" data-ok="' + (o.ok ? '1' : '0') + '"><div class="badge">' + letters[i] + ':</div><div class="otext">' + o.t + '</div></div>';
+      }).join('');
+
+      // Ladder: pregunta actual + zona segura alcanzada + próximo objetivo
+      const nextN = (qN < pool.length) ? (qN + 1) : 0;
+      renderLadder(qN, st.safeStepReached, nextN);
+      if (st.pulseN){
+        pulseStep(st.pulseN);
+        st.pulseN = 0;
+      }
+
+      // Premio actual (lo acumulado es la pregunta anterior superada)
+      $('moneyNow').textContent = 'Premio actual: ' + st.currentAward;
+
+      // Habilitar ayudas (si no usadas)
+      $('life5050').disabled = st.used5050;
+      $('lifePhone').disabled = st.usedPhone;
+      $('lifeAudience').disabled = st.usedAudience;
+      $('lifeSwitch').disabled = st.usedSwitch;
+
+      // Bloqueo temporal de clics al cargar pregunta (300–600ms)
+      lockOptionsFor(randInt(300, 600));
+
+      // Bind clicks + audio + accesibilidad (role/tabindex/teclas)
+      document.querySelectorAll('.opt').forEach(el => {
+        // accesibilidad
+        try {
+          el.tabIndex = 0;
+          el.setAttribute('role','button');
+          const badge = el.querySelector('.badge');
+          const letter = badge ? badge.textContent.replace(':','').trim() : '';
+          el.setAttribute('aria-label', 'Opción ' + (letter || ''));
+        } catch(e){}
+
+        el.addEventListener('mouseenter', () => { try { audio.hover(); } catch(e){} });
+        el.addEventListener('focus', () => { try { el.classList.add('kbfocus'); } catch(e){} });
+        el.addEventListener('blur', () => { try { el.classList.remove('kbfocus'); } catch(e){} });
+        el.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter' || ev.key === ' ') {
+            ev.preventDefault();
+            el.click();
+          }
+        });
+        el.addEventListener('click', () => {
+          if (st.locked || st.confirmOpen) return;
+          if (performance.now() < st.clickBlockUntil) return;
+          document.querySelectorAll('.opt').forEach(x => x.classList.remove('sel'));
+          el.classList.add('sel');
+          st.selected = el;
+          try { audio.select(); } catch(e){}
+        });
+      });
+
+      // Secuencia de entrada: panel de pregunta y aparición escalonada de opciones
+      applyEntrySequence();
+    }
+
+    function openModal(title, body, extra){
+      $("modalTitle").textContent = title;
+      $("modalBody").innerHTML = body;
+      $("modal").classList.add("open");
+    }
+    function closeModal(){ $("modal").classList.remove("open"); }
+    $("btnCloseModal").addEventListener("click", closeModal);
+    $("modal").addEventListener("click", (e) => { if (e.target === $("modal")) closeModal(); });
+
+    // ==============================
+    // Reporte final (ganar / perder / retirarse)
+    // ==============================
+    function fmtTime(ms){
+      const s = Math.max(0, Math.floor((ms || 0) / 1000));
+      const m = Math.floor(s / 60);
+      const r = s % 60;
+      return String(m).padStart(2,'0') + ':' + String(r).padStart(2,'0');
+    }
+    function helpsUsed(){
+      const arr = [];
+      if (st.used5050) arr.push('50:50');
+      if (st.usedPhone) arr.push('Llamada');
+      if (st.usedAudience) arr.push('Público');
+      if (st.usedSwitch) arr.push('Cambio');
+      return arr;
+    }
+    function finalizeReport(status, finalPrize, reachedOverride){
+      if (!st.endedAt) st.endedAt = performance.now();
+      const reached = (typeof reachedOverride === 'number') ? reachedOverride : st.idx;
+      const ms = Math.max(0, (st.endedAt || performance.now()) - (st.startedAt || performance.now()));
+      const rep = {
+        modo: 'Millonario',
+        estado: status,
+        correctas: st.correctCount || 0,
+        total_preguntas: pool.length,
+        tiempo_total: fmtTime(ms),
+        tiempo_ms: Math.round(ms),
+        ayudas_usadas: helpsUsed(),
+        nivel_alcanzado: reached,
+        premio_final: (finalPrize || '0'),
+        premio_actual: (st.currentAward || '0'),
+        zona_segura: (st.safeStepReached || 0),
+        monto_zona_segura: (st.safeReached || '0'),
+        titulo: (document.title || ''),
+        timestamp: new Date().toISOString()
+      };
+      return rep;
+    }
+
+    function formatIsoForHum(iso){
+      try {
+        const d = new Date(iso);
+        return d.toLocaleString('es-CO', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+      } catch(e){
+        return String(iso || '');
+      }
+    }
+
+    function buildFinalStatsHtml(rep){
+      const ayudas = (rep.ayudas_usadas && rep.ayudas_usadas.length) ? rep.ayudas_usadas : [];
+      const pill = (label, on, icon) => {
+        const cls = 'reportPill' + (on ? '' : ' off');
+        const ic = icon ? ('<i class="' + icon + '" style="margin-right:8px;"></i>') : '';
+        return '<span class="' + cls + '">' + ic + label + '</span>';
+      };
+
+      const dateHuman = formatIsoForHum(rep.timestamp);
+      const estado = String(rep.estado || '').toLowerCase();
+      const headline =
+        (estado === 'ganar') ? '¡GANASTE!' :
+        (estado === 'perder') ? 'FIN DEL JUEGO' :
+        'RETIRO CONFIRMADO';
+
+      const sub =
+        (estado === 'ganar') ? 'Completaste la escalera y alcanzaste el premio máximo.' :
+        (estado === 'perder') ? 'El premio final corresponde a la última zona segura alcanzada.' :
+        'Te llevas el premio acumulado hasta este punto.';
+
+      const safeText = (rep.zona_segura && rep.zona_segura > 0)
+        ? ('Pregunta ' + rep.zona_segura + ' · ' + (rep.monto_zona_segura || '0'))
+        : 'No alcanzada';
+
+      return '' +
+        '<div class="reportWrap" id="finalReportCard">' +
+          '<div class="reportHead">' +
+            '<div>' +
+              '<div class="reportTag">REPORTE FINAL · MODO MILLONARIO</div>' +
+              '<div class="reportTitle">' + headline + '</div>' +
+              '<div class="reportSub">' + sub + '</div>' +
+              '<div class="reportSub" style="margin-top:6px;">Fecha: <b style="color:rgba(255,255,255,.92);">' + dateHuman + '</b></div>' +
+            '</div>' +
+            '<div style="text-align:right; min-width:160px;">' +
+              '<div class="reportTag">PREMIO FINAL</div>' +
+              '<div class="reportTitle" style="margin-top:6px; font-size:28px; color:var(--sel); text-shadow:0 18px 30px rgba(0,0,0,.35);">' + (rep.premio_final || '0') + '</div>' +
+            '</div>' +
+          '</div>' +
+
+          '<div class="reportGrid">' +
+            '<div class="reportItem"><div class="k">Correctas</div><div class="v">' + rep.correctas + ' / ' + rep.total_preguntas + '</div></div>' +
+            '<div class="reportItem"><div class="k">Tiempo total</div><div class="v">' + rep.tiempo_total + '</div></div>' +
+            '<div class="reportItem"><div class="k">Nivel alcanzado</div><div class="v">' + rep.nivel_alcanzado + '</div></div>' +
+            '<div class="reportItem"><div class="k">Zona segura</div><div class="v">' + safeText + '</div></div>' +
+          '</div>' +
+
+          '<div class="reportPills" aria-label="Ayudas usadas">' +
+            pill('50:50', ayudas.indexOf('50:50') >= 0, 'fa-solid fa-divide') +
+            pill('Llamada', ayudas.indexOf('Llamada') >= 0, 'fa-solid fa-phone') +
+            pill('Público', ayudas.indexOf('Público') >= 0, 'fa-solid fa-users') +
+            pill('Cambio', ayudas.indexOf('Cambio') >= 0, 'fa-solid fa-shuffle') +
+          '</div>' +
+
+          '<div class="reportActions">' +
+            '<button type="button" class="btn primary" data-report="print"><i class="fa-solid fa-print" style="margin-right:10px;"></i>Imprimir / Guardar PDF</button>' +
+          '</div>' +
+        '</div>';
+    }
+
+    function wireReportButtons(root){
+      if (!root) return;
+      const btn = root.querySelector('[data-report="print"]');
+      if (btn){
+        btn.addEventListener('click', () => {
+          try { window.print(); } catch(e){}
+        });
+      }
+    }
+
+
+    // ==============================
+    // Audio (wrappers)
+    // ==============================
+    function playWinSound(){ try { audio.win(); } catch(e){} }
+    function playLoseSound(){ try { audio.lose(); } catch(e){} }
+    function playProcessingSound(durationMs = 900){ try { audio.processing(durationMs); } catch(e){} }
+
+    function burstConfetti(durationMs = 4200){
+      let canvas = document.getElementById('confettiCanvas');
+      if (!canvas) {
+        canvas = document.createElement('canvas');
+        canvas.id = 'confettiCanvas';
+        document.body.appendChild(canvas);
+      }
+      const ctx = canvas.getContext('2d');
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+
+      function resize(){
+        canvas.width = Math.floor(window.innerWidth * dpr);
+        canvas.height = Math.floor(window.innerHeight * dpr);
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      resize();
+      window.addEventListener('resize', resize, { passive: true });
+
+      const colors = ['#f59e0b', '#22c55e', '#60a5fa', '#e879f9', '#f87171', '#fbbf24'];
+      const W = () => window.innerWidth;
+      const H = () => window.innerHeight;
+
+      const count = Math.min(360, Math.max(180, Math.floor((W()*H())/5500)));
+      const particles = Array.from({length: count}, () => ({
+        x: Math.random()*W(),
+        y: -20 - Math.random()*H()*0.2,
+        vx: (Math.random()-0.5)*6,
+        vy: 2 + Math.random()*6,
+        r: Math.random()*Math.PI*2,
+        vr: (Math.random()-0.5)*0.25,
+        s: 4 + Math.random()*6,
+        c: colors[Math.floor(Math.random()*colors.length)],
+        w: 0.6 + Math.random()*0.8,
+      }));
+
+      const start = performance.now();
+      const end = start + durationMs;
+
+      function frame(t){
+        ctx.clearRect(0,0,W(),H());
+        for (const p of particles){
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.05; // gravedad
+          p.r += p.vr;
+
+          // Rebotar lateralmente suave
+          if (p.x < -30) p.x = W()+30;
+          if (p.x > W()+30) p.x = -30;
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.r);
+          ctx.fillStyle = p.c;
+          ctx.globalAlpha = 0.92;
+          ctx.fillRect(-p.s/2, -p.s/2, p.s, p.s*p.w);
+          ctx.restore();
+        }
+
+        if (t < end){
+          requestAnimationFrame(frame);
+        } else {
+          ctx.clearRect(0,0,W(),H());
+          window.removeEventListener('resize', resize);
+          // dejar canvas un momento para evitar flash
+          setTimeout(() => { try { canvas.remove(); } catch(e){} }, 250);
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function showWin(prize){
+      try { closeModal(); } catch(e){}
+
+      const rep = finalizeReport('ganar', prize, pool.length);
+      const statsHtml = buildFinalStatsHtml(rep);
+
+      // bloquear UI
+      st.locked = true;
+      document.querySelectorAll('.opt').forEach(o => o.classList.add('hidden'));
+      ['life5050','lifePhone','lifeAudience','lifeSwitch','btnFinal','btnWalk'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = true;
+      });
+      $('moneyNow').textContent = 'Premio final: ' + (prize || '0');
+
+      // marcar escalera como completada
+      renderLadder(16, 15, 0);
+
+      // overlay
+      const prev = document.getElementById('winOverlay');
+      if (prev) prev.remove();
+      const ov = document.createElement('div');
+      ov.id = 'winOverlay';
+      ov.innerHTML = '' +
+        '<div id="winCard">' +
+          '<div id="winTitle">¡GANASTE!</div>' +
+          '<div id="winTrophy" class="qs-trophy-pop"><i class="fa-solid fa-trophy"></i></div>' +
+          '<div id="winPrize">Premio: <b>' + (prize || '0') + '</b></div>' +
+          '<div id="winSub">Completaste todas las preguntas del juego.</div>' +
+          statsHtml +
+          '<div id="winActions">' +
+            '<button id="winRestart" class="btn primary">Jugar de nuevo</button>' +
+            '' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(ov);
+      try { wireReportButtons(ov, rep); } catch(e){}
+
+      // confetti
+      burstConfetti(4200);
+
+      // acciones
+      const restart = document.getElementById('winRestart');
+      if (restart) restart.addEventListener('click', () => location.reload());
+    }
+
+    
+
+    function showLose(prize, reached, total, acc){
+      try { closeModal(); } catch(e){}
+
+      const rep = finalizeReport('perder', prize, reached);
+      const statsHtml = buildFinalStatsHtml(rep);
+
+      // bloquear UI
+      st.locked = true;
+      document.querySelectorAll('.opt').forEach(o => o.classList.add('hidden'));
+      ['life5050','lifePhone','lifeAudience','lifeSwitch','btnFinal','btnWalk'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = true;
+      });
+      $('moneyNow').textContent = 'Premio final: ' + (prize || '0');
+
+      const prev = document.getElementById('loseOverlay');
+      if (prev) prev.remove();
+      const ov = document.createElement('div');
+      ov.id = 'loseOverlay';
+      ov.innerHTML = '' +
+        '<div id="loseCard">' +
+          '<div id="loseTitle">PERDISTE</div>' +
+          '<div id="loseIcon" class="qs-trophy-pop"><i class="fa-solid fa-circle-xmark"></i></div>' +
+          '<div id="loseMeta">Preguntas superadas: <b>' + (reached||0) + '</b> de <b>' + (total||0) + '</b>. &nbsp; Acumulado: <b>' + (acc||'0') + '</b>.</div>' +
+          '<div id="losePrizeLabel">Premio final (última zona segura)</div>' +
+          '<div id="losePrize">' + (prize || '0') + '</div>' +
+          statsHtml +
+          '<div id="loseActions">' +
+            '<button id="loseRestart" class="btn primary">Jugar de nuevo</button>' +
+          '</div>' +
+        '</div>';
+
+      document.body.appendChild(ov);
+      try { wireReportButtons(ov, rep); } catch(e){}
+
+      const restart = document.getElementById('loseRestart');
+      if (restart) restart.addEventListener('click', () => location.reload());
+    }
+
+function showWalkAway(prize, safeStep, safeMoney){
+      try { closeModal(); } catch(e){}
+
+      const rep = finalizeReport('retirarse', prize, st.idx);
+      const statsHtml = buildFinalStatsHtml(rep);
+
+      // bloquear UI
+      st.locked = true;
+      document.querySelectorAll('.opt').forEach(o => o.classList.add('hidden'));
+      ['life5050','lifePhone','lifeAudience','lifeSwitch','btnFinal','btnWalk'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = true;
+      });
+      $('moneyNow').textContent = 'Premio final: ' + (prize || '0');
+
+      const prev = document.getElementById('walkOverlay');
+      if (prev) prev.remove();
+
+      const ov = document.createElement('div');
+      ov.id = 'walkOverlay';
+
+      const safeLabel = (safeStep && safeStep > 0)
+        ? ('Pregunta ' + safeStep + ' · ' + (safeMoney || '0'))
+        : '0';
+
+      ov.innerHTML = '' +
+        '<div id="walkCard">' +
+          '<div id="walkTitle">RETIRO</div>' +
+          '<div id="walkPrizeLabel">Premio actual</div>' +
+          '<div id="walkPrize">' + (prize || '0') + '</div>' +
+          '<div id="walkSafe">Zona segura más cercana: <b>' + safeLabel + '</b></div>' +
+          statsHtml +
+          '<div id="walkActions">' +
+            '<button id="walkRestart" class="btn primary">Jugar de nuevo</button>' +
+            '' +
+          '</div>' +
+        '</div>';
+
+      document.body.appendChild(ov);
+      try { wireReportButtons(ov, rep); } catch(e){}
+
+      const restart = document.getElementById('walkRestart');
+      if (restart) restart.addEventListener('click', () => location.reload());
+    }
+
+
+
+    // Ayudas
+    $("life5050").addEventListener("click", () => {
+      if (st.locked || st.confirmOpen) return;
+      if (st.used5050) return;
+      st.used5050 = true;
+      // ocultar 2 incorrectas
+      const opts = Array.from(document.querySelectorAll(".opt"));
+      const wrong = opts.filter(o => o.getAttribute("data-ok") !== "1");
+      shuffle(wrong);
+      wrong.slice(0,2).forEach(o => o.classList.add("hidden"));
+      $("life5050").disabled = true;
+    });
+
+    $("lifePhone").addEventListener("click", () => {
+      if (st.locked || st.confirmOpen) return;
+      if (st.usedPhone) return;
+      st.usedPhone = true;
+      $("lifePhone").disabled = true;
+
+      let t = 30;
+      openModal(
+        "Llamada a un amigo",
+        '<div class="phoneTimerWrap">' +
+          '<div id="phoneBig" class="phoneBig">30</div>' +
+          '<div class="phoneSub">SEGUNDOS</div>' +
+          '<div class="phoneHint">Consulta con tu amigo y vuelve a responder.</div>' +
+        '</div>',
+        null
+      );
+
+      const iv = setInterval(() => {
+        t--;
+        const el = document.getElementById('phoneBig');
+        if (el) el.textContent = String(Math.max(0, t));
+        if (t <= 0){
+          clearInterval(iv);
+          $("modalBody").innerHTML = '<div class="phoneTimerWrap">' +
+            '<div id="phoneBig" class="phoneBig">0</div>' +
+            '<div class="phoneSub">TIEMPO FINALIZADO</div>' +
+            '<div class="phoneHint">La llamada terminó.</div>' +
+          '</div>';
+        }
+      }, 1000);
+    });
+
+    $("lifeAudience").addEventListener("click", () => {
+      if (st.locked || st.confirmOpen) return;
+      if (st.usedAudience) return;
+      st.usedAudience = true;
+      $("lifeAudience").disabled = true;
+
+      const audienceN = 100 + Math.floor(Math.random() * 401);
+      const opts = Array.from(document.querySelectorAll(".opt"));
+      const correctIndex = opts.findIndex(o => o.getAttribute("data-ok") === "1");
+      const letters = ['A','B','C','D'];
+
+      let correctP = 55 + Math.floor(Math.random() * 21); // 55-75
+      if (correctIndex < 0) correctP = 60;
+      let rest = 100 - correctP;
+      const others = [0,1,2,3].filter(i => i !== correctIndex);
+
+      const r1 = Math.floor(rest * (0.25 + Math.random()*0.25));
+      const r2 = Math.floor((rest - r1) * (0.35 + Math.random()*0.35));
+      const r3 = rest - r1 - r2;
+      const parts = [r1, r2, r3];
+      shuffle(parts);
+
+      const perc = [0,0,0,0];
+      if (correctIndex >= 0) perc[correctIndex] = correctP;
+      others.forEach((ix, k) => { perc[ix] = Math.max(3, parts[k]); });
+
+      let sum = perc.reduce((a,b)=>a+b,0);
+      if (sum !== 100) {
+        const ix = (correctIndex >= 0) ? correctIndex : 0;
+        perc[ix] = Math.max(0, perc[ix] + (100 - sum));
+      }
+
+      let maxI = 0;
+      for (let i=1;i<4;i++) if (perc[i] > perc[maxI]) maxI = i;
+
+      // Gráfico de barras vertical (A, B, C, D) + ejes 0-100%
+      const yTicksHtml = ['100%','80%','60%','40%','20%','0%'].map(t => '<div class="yTick">' + t + '</div>').join('');
+      const barsHtml = letters.map((L, i) => {
+        const isCorrect = (i === correctIndex);
+        const cls = 'barFill' + (isCorrect ? ' correct' : '');
+        return (
+          '<div class="barBox">' +
+            '<div class="barPct" id="barPct' + i + '">0%</div>' +
+            '<div class="' + cls + '" id="barFill' + i + '" data-p="' + perc[i] + '"></div>' +
+          '</div>'
+        );
+      }).join('');
+      const xLabsHtml = letters.map(L => '<div class="xLab">' + L + '</div>').join('');
+
+      openModal(
+        "Ayuda del público",
+        '<div class="audWrap">' +
+          '<div class="audMeta">Público: <b>' + audienceN + '</b> personas</div>' +
+          '<div class="audMeta" style="margin-top:6px;">Correcta: <b style="color: var(--sel); font-size:18px; letter-spacing:.18em;">' + (letters[(correctIndex>=0?correctIndex:maxI)] || '') + '</b></div>' +
+          '<div class="audChart">' +
+            '<div class="yAxis">' + yTicksHtml + '</div>' +
+            '<div class="plot">' +
+              '<div class="barsGrid">' + barsHtml + '</div>' +
+              '<div class="xAxis">' + xLabsHtml + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="audNote">La barra más alta indica la opción correcta. Elige tu respuesta final.</div>' +
+        '</div>',
+        null
+      );
+
+      // Animación: barras crecen desde abajo hacia arriba
+      setTimeout(() => {
+        for (let i=0;i<4;i++){
+          const fill = document.getElementById('barFill' + i);
+          const pct = document.getElementById('barPct' + i);
+          const target = perc[i];
+          if (fill) fill.style.height = target + '%';
+          if (pct) {
+            // contar porcentaje durante la animación
+            const start = performance.now();
+            const dur = 3600;
+            const tick = (now) => {
+              const t = Math.min(1, (now - start) / dur);
+              const val = Math.round(target * t);
+              pct.textContent = val + '%';
+              // posicion aproximada según valor
+              pct.style.bottom = 'calc(' + Math.max(0, Math.min(100, val)) + '% + 6px)';
+              if (t < 1) requestAnimationFrame(tick);
+              else pct.textContent = target + '%';
+            };
+            requestAnimationFrame(tick);
+          }
+        }
+      }, 80);
+
+    });
+
+    $("lifeSwitch").addEventListener("click", () => {
+      if (st.locked || st.confirmOpen) return;
+      if (st.usedSwitch) return;
+      st.usedSwitch = true;
+      $("lifeSwitch").disabled = true;
+      // Cambiar por otra pregunta del pool (si hay)
+      const remaining = BANK.map(q => ({
+        pregunta: (q.pregunta ?? "").toString().trim(),
+        correcta: firstCell((q.correctas||[])[0]),
+        incorrectas: (q.incorrectas||[]).map(firstCell).filter(Boolean)
+      })).filter(q => q.pregunta && q.correcta && q.incorrectas.length >= 3);
+      // escoger una que no esté usada
+      const used = new Set(pool.map(x=>x.pregunta));
+      const candidates = remaining.filter(x => !used.has(x.pregunta));
+      if (!candidates.length) {
+        return;
+      }
+      shuffle(candidates);
+      pool[st.idx] = candidates[0];
+      render();
+    });
+
+    // Botones
+    $("btnFinal").addEventListener("click", () => {
+      if (!st.selected || st.locked || st.confirmOpen) return;
+      // Confirmación tipo "¿Última palabra?" + sonido sutil
+      openConfirm();
+    });
+
+    // Confirmación: botones
+    $("btnConfirmNo").addEventListener("click", () => {
+      if (!st.confirmOpen) return;
+      closeConfirm();
+      try { audio.select(); } catch(e){}
+    });
+
+    $("btnConfirmYes").addEventListener("click", () => {
+      if (!st.confirmOpen) return;
+      closeConfirm();
+      if (!st.selected || st.locked) return;
+
+      st.locked = true;
+
+      // Tensión durante el bloqueo antes de revelar
+      const revealMs = randInt(520, 860);
+      try { st.selected.classList.add('reveal'); } catch(e){}
+      try { audio.tension(revealMs); } catch(e){}
+
+      setTimeout(() => {
+        try { st.selected.classList.remove('reveal'); } catch(e){}
+
+        const isOk = st.selected.getAttribute("data-ok") === "1";
+        const qN = st.idx + 1;
+
+        if (isOk) {
+          // Respuesta correcta: verde total
+          st.selected.classList.remove("sel");
+          st.selected.classList.add("ok");
+          try { audio.correct(); } catch(e){}
+          st.correctCount = (st.correctCount || 0) + 1;
+
+          // actualizar acumulado (pregunta superada)
+          st.currentAward = moneyForQuestion(qN);
+          const safeStep = (qN >= 15) ? 15 : ((qN >= 10) ? 10 : ((qN >= 5) ? 5 : 0));
+          st.safeStepReached = safeStep;
+          st.safeReached = safeStep ? moneyForQuestion(safeStep) : "0";
+
+          const isLast = (st.idx + 1 >= pool.length);
+          if (isLast) {
+            // fanfarra de victoria y overlay
+            try { playWinSound(); } catch(e) {}
+          }
+
+          // Parpadeo verde 2s antes de avanzar
+          const selEl = st.selected;
+          try { if (selEl) selEl.classList.add('blink-ok'); } catch(e){}
+
+          setTimeout(() => {
+            try { if (selEl) selEl.classList.remove('blink-ok'); } catch(e){}
+            if (isLast) {
+              showWin(st.currentAward);
+            } else {
+              st.idx++;
+              st.pulseN = st.idx + 1; // pulse del nuevo nivel
+              render();
+            }
+          }, 2000);
+
+        } else {
+          // Respuesta incorrecta: mantener naranja seleccionada y correcta en verde parpadeante
+          const corr = Array.from(document.querySelectorAll(".opt")).find(o => o.getAttribute("data-ok") === "1");
+          if (corr) { corr.classList.add("ok"); corr.classList.add("blink-ok"); }
+          try { audio.wrong(); } catch(e){}
+          try { playLoseSound(); } catch(e) {}
+
+          const prize = st.safeReached || "0";
+
+          // Bloquear controles tras perder
+          ['life5050','lifePhone','lifeAudience','lifeSwitch','btnFinal','btnWalk'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.disabled = true;
+          });
+
+          setTimeout(() => {
+            const reached = st.idx; // preguntas superadas
+            const total = pool.length;
+            const acc = st.currentAward || "0";
+            const rep = finalizeReport('perder', prize, reached);
+            showLose(prize, reached, total, acc);
+          }, 500);
+        }
+      }, revealMs);
+    });
+
+    // Cerrar confirmación al hacer click fuera
+    $("confirm").addEventListener("click", (e) => {
+      if (e.target === $("confirm")) closeConfirm();
+    });
+
+
+    // ==============================
+    // Accesibilidad: control por teclado
+    // 1/2/3/4 -> A/B/C/D, Enter -> confirmar, Esc -> cancelar
+    // ==============================
+    function setupKeyboardShortcuts(){
+      const isTypingTarget = (t) => {
+        if (!t) return false;
+        const tag = (t.tagName || '').toLowerCase();
+        return tag === 'input' || tag === 'textarea' || t.isContentEditable;
+      };
+      const focusOpt = (el) => {
+        document.querySelectorAll('.opt').forEach(x => x.classList.remove('kbfocus'));
+        if (!el) return;
+        try { el.classList.add('kbfocus'); } catch(e){}
+        try { el.focus({ preventScroll: true }); } catch(e){}
+      };
+      const getOpt = (i) => document.querySelector('.opt[data-i="' + i + '"]:not(.hidden)');
+
+      document.addEventListener('keydown', (e) => {
+        if (isTypingTarget(e.target)) return;
+
+        const modalOpen = (() => {
+          try { return document.getElementById('modal').classList.contains('open'); } catch(e) { return false; }
+        })();
+        if (modalOpen && !st.confirmOpen) return;
+
+        const k = e.key;
+
+        // Toggle alto contraste (H)
+        if (k === 'h' || k === 'H'){
+          toggleHighContrast();
+          e.preventDefault();
+          return;
+        }
+
+        if (k === '1' || k === '2' || k === '3' || k === '4'){
+          if (st.locked || st.confirmOpen) return;
+          if (performance.now() < st.clickBlockUntil) return;
+          const i = parseInt(k, 10) - 1;
+          const el = getOpt(i);
+          if (el){
+            el.click();
+            focusOpt(el);
+          }
+          e.preventDefault();
+          return;
+        }
+
+        if (k === 'Enter'){
+          if (st.confirmOpen){
+            const yes = document.getElementById('btnConfirmYes');
+            if (yes) yes.click();
+            e.preventDefault();
+            return;
+          }
+          if (!st.selected || st.locked) return;
+          openConfirm();
+          e.preventDefault();
+          return;
+        }
+
+        if (k === 'Escape'){
+          if (!st.confirmOpen) return;
+          const no = document.getElementById('btnConfirmNo');
+          if (no) no.click();
+          e.preventDefault();
+          return;
+        }
+      });
+    }
+
+
+    $("btnWalk").addEventListener("click", () => {
+      if (st.locked || st.confirmOpen) return;
+      const prize = st.currentAward || "0";
+      const safeStep = st.safeStepReached || 0;
+      const safeMoney = st.safeReached || "0";
+      showWalkAway(prize, safeStep, safeMoney);
+    });
+
+    // Audio UI
+    try { syncAudioUI(); } catch(e){}
+    try { initHighContrast(); } catch(e){}
+    try { setupKeyboardShortcuts(); } catch(e){}
+
+    // Start
+    render();
+  })();
+  ${ESCR}
+</body>
+</html>`;
     }
 
     function generateQuizHtml(quizPack) {
@@ -1329,6 +3188,9 @@ No muestres nada más (sin listas, sin comentarios, sin formato alterno).`;
       const ESCR = "</scr" + "ipt>";
 
       const cfg = quizPack.CONFIG_DATA || {};
+      if ((cfg.mode || "evaluation") === "millionaire") {
+        return generateMillionaireHtml(quizPack);
+      }
       const title = escapeHtml(cfg.title || "EVALUACIÓN DE APRENDIZAJE");
       const instructor = escapeHtml(cfg.instructor || "");
       const theme = escapeHtml(cfg.theme || "");
@@ -2102,7 +3964,7 @@ try {
 
         // Construir preguntas con opciones y respuesta(s) correctas
         this.sessionPool = picked.map((q, idx) => {
-          const correct = Array.isArray(q.correctas) ? q.correctas.slice().map(s => String(s).trim()).filter(Boolean) : [];
+          const correct = Array.isArray(q.correctas) ? q.correctas.slice().map(s => String(s ?? "").trim()).filter(Boolean) : [];
           let incorrect = Array.isArray(q.incorrectas) ? q.incorrectas.slice().map(s => String(s).trim()).filter(Boolean) : [];
 
           // Evitar que una incorrecta sea igual a una correcta
@@ -2201,7 +4063,7 @@ try {
           return {
             index: idx,
             pregunta: String(q.pregunta || ""),
-            opciones: optionObjs.map(o => o.txt),
+            opciones: optionObjs.map(o => { const t = String(o.txt ?? ""); const parts = t.includes(';') ? t.split(';').map(s=>String(s||'').trim()).filter(Boolean) : [t.trim()]; return (parts[0] || '').trim(); }),
             correctas: correctIdx,
             multi: !!multiFlag
           };
@@ -3275,7 +5137,7 @@ const selected = this.userAnswers[this.currentIndex] || [];
         this.score = 0;
         this.results = [];
 
-        const partialEnabled = (!!CONFIG_DATA.partialMultiplePoints) && (Number(CONFIG_DATA.optionsCount || 4) === 4);
+        const partialEnabled = (!!CONFIG_DATA.partialMultiplePoints) && (!CONFIG_DATA.isPractice || (Number(CONFIG_DATA.optionsCount || 4) === 4));
 
         this.sessionPool.forEach((q, i) => {
           const sel = this.userAnswers[i] || [];
@@ -4680,9 +6542,12 @@ document.addEventListener("visibilitychange", () => {
         return String(d.getFullYear()) + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes());
       })();
       const pack = buildQuizPack(stamp);
+      if (!pack) return;
       const html = generateQuizHtml(pack);
       const temaSlug = slugify(state.config.theme || "SinTema");
-      const file = "EV_" + stamp + "_" + temaSlug + ".html";
+      const m = state.config.mode || "evaluation";
+      const prefix = (m === "practice") ? "PRA_" : (m === "millionaire") ? "MILL_" : "EV_";
+      const file = prefix + stamp + "_" + temaSlug + ".html";
       if (mode === "preview") previewHtml(html);
       else downloadHtml(html, file);
     }
@@ -4693,9 +6558,12 @@ document.addEventListener("visibilitychange", () => {
     function bind() {
       const syncPartialMulti = () => {
         try {
-          const isPrac = !!$("cfgPracticeMode").checked;
+          const mode = state.config.mode || "evaluation";
+          const isPrac = (mode === "practice");
+          const isMill = (mode === "millionaire");
           const oc = parseInt(dom.cfgOptions.value || "4", 10) || 4;
-          const allow = (!isPrac) && (oc === 4);
+          const hasMulti = state.questions.some(q => (q.correctas || []).length > 1);
+          const allow = (mode === "evaluation") && (oc >= 4 && oc <= 6) && hasMulti;
           if (dom.cfgPartialMultiPoints) {
             dom.cfgPartialMultiPoints.disabled = !allow;
             if (!allow) dom.cfgPartialMultiPoints.checked = false;
@@ -4740,8 +6608,16 @@ document.addEventListener("visibilitychange", () => {
         });
       });
 
-      // Estado inicial de elegibilidad del puntaje parcial (solo 4 opciones y modo evaluación)
+      // Estado inicial de elegibilidad del puntaje parcial (modo evaluación, 4–6 opciones)
       syncPartialMulti();
+
+      // Botones de modo
+      const btnEval = document.getElementById("btnModeEval");
+      const btnPrac = document.getElementById("btnModePrac");
+      const btnMill = document.getElementById("btnModeMill");
+      if (btnEval) btnEval.addEventListener("click", () => { setGeneratorMode("evaluation"); syncPartialMulti(); });
+      if (btnPrac) btnPrac.addEventListener("click", () => { setGeneratorMode("practice"); syncPartialMulti(); });
+      if (btnMill) btnMill.addEventListener("click", () => { setGeneratorMode("millionaire"); syncPartialMulti(); });
 
       // file select
       dom.fileInput.addEventListener("change", (e) => {
@@ -4810,69 +6686,7 @@ dom.dropzone.addEventListener("dragover", (e) => {
         syncConfigToDom();
         renderStats();
       });
-    
 
-      // Toggle Modo Práctica / Evaluación (solo UI del generador)
-      $("cfgPracticeMode").addEventListener("change", (e) => {
-        const isPrac = e.target.checked;
-        const wrap = $("modeWrapper");
-        const icon = $("modeIcon");
-        const desc = $("modeDesc");
-        const btnGen = $("btnGenerate");
-
-        if (isPrac) {
-          wrap.className = "mode-prac-active";
-          icon.className = "fa-solid fa-gamepad";
-          desc.textContent = "Modo Práctica: el aprendiz configura cronómetro, puntaje parcial y # de opciones.";
-          desc.className = "text-center text-xs font-bold text-violet-500 mt-2 uppercase tracking-widest";
-          btnGen.className = btnGen.className.replace("btn-sena", "bg-violet-600 text-white hover:bg-violet-700");
-        } else {
-          wrap.className = "mode-eval-active";
-          icon.className = "fa-solid fa-file-signature";
-          desc.textContent = "Modo estricto: Calificación y Seguridad";
-          desc.className = "text-center text-xs font-bold text-slate-400 mt-2 uppercase tracking-widest";
-          btnGen.className = btnGen.className.replace("bg-violet-600 text-white hover:bg-violet-700", "btn-sena");
-        }
-        // En modo práctica, estos parámetros los ajusta el aprendiz en el examen
-        const lockIds = ["cfgTimer","cfgTimeLimit","cfgSequential","cfgPartialMultiPoints","cfgLockResults","cfgPin","btnToggleCfgPin","cfgOptions"];
-        lockIds.forEach(id => {
-          const el = $(id);
-          if (!el) return;
-          el.disabled = !!isPrac;
-          const card = el.closest("label") || el.closest(".soft") || el.closest("div");
-          if (card) {
-            card.classList.toggle("opacity-60", !!isPrac);
-            card.classList.toggle("pointer-events-none", !!isPrac);
-          }
-        });
-
-        // En práctica: ocultar la tarjeta de modo secuencial (queda activo por defecto)
-        const seqCard = $("cfgSequentialCard");
-        if (seqCard) seqCard.classList.toggle("hidden", !!isPrac);
-
-        if (isPrac) {
-          // Forzar seguridad off (no aplica en práctica)
-          dom.cfgLockResults.checked = false;
-          dom.pinRow.classList.add("hidden");
-          dom.pinRow.classList.remove("flex");
-          dom.cfgPin.value = "";
-          state.config.lockResults = false;
-          state.config.pin = "";
-
-          // Valores sugeridos (el aprendiz puede ajustar en el examen)
-          dom.cfgTimer.checked = false;
-          dom.timerRow.classList.add("hidden");
-          dom.timerRow.classList.remove("flex");
-          dom.cfgTimeLimit.value = "30";
-          dom.cfgSequential.checked = true;
-          dom.cfgPartialMultiPoints.checked = false;
-          dom.cfgOptions.value = "4";
-
-          syncPartialMulti();
-          readConfigFromDom();
-        }
-
-      });
 }
 
     /** ============================
