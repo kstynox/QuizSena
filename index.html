@@ -347,13 +347,21 @@
               <div class="text-xs text-slate-500 font-semibold">Otorga fracción de punto por cada correcta marcada (sin marcar incorrectas).</div>
             </div>
           </label>
-        </div>
+        
+          <label class="soft rounded-3xl p-5 flex items-center gap-4 cursor-pointer select-none">
+            <input id="cfgHideResultsDetails" type="checkbox" class="w-6 h-6 accent-emerald-600" />
+            <div class="flex-1">
+              <div class="text-sm font-black">Ocultar resultados</div>
+              <div class="text-xs text-slate-500 font-semibold">Oculta el detalle (Todas/Correctas/Incorrectas) y no lo incluye en el PDF.</div>
+            </div>
+          </label>
+</div>
 
         <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <label class="soft rounded-3xl p-5 flex items-center gap-4 cursor-pointer select-none">
             <input id="cfgLockResults" type="checkbox" class="w-6 h-6 accent-emerald-600" />
             <div class="flex-1">
-              <div class="text-sm font-black">Ocultar resultados</div>
+              <div class="text-sm font-black">Bloquear al Finalizar</div>
               <div class="text-xs text-slate-500 font-semibold">Requiere PIN del instructor.</div>
               <div id="pinRow" class="mt-3 hidden">
                 <div class="relative mt-2">
@@ -590,6 +598,7 @@
         shuffleQuestions: true,
         shuffleOptions: true,
         partialMultiplePoints: false,
+        hideResultsDetails: false,
         lockResults: false,
         pin: ""
       }
@@ -725,6 +734,7 @@
       timerRow: $("timerRow"),
       cfgSequential: $("cfgSequential"),
       cfgPartialMultiPoints: $("cfgPartialMultiPoints"),
+      cfgHideResultsDetails: $("cfgHideResultsDetails"),
       cfgShuffleQ: $("cfgShuffleQ"),
       cfgShuffleO: $("cfgShuffleO"),
       cfgLockResults: $("cfgLockResults"),
@@ -797,8 +807,8 @@
       }
 
       // Bloqueos por modo
-      const lockIdsPractice = ["cfgTimer","cfgTimeLimit","cfgSequential","cfgPartialMultiPoints","cfgLockResults","cfgPin","btnToggleCfgPin","cfgOptions"];
-      const lockIdsMillion  = ["cfgTimer","cfgTimeLimit","cfgSequential","cfgPartialMultiPoints","cfgLockResults","cfgPin","btnToggleCfgPin","cfgOptions","cfgCount"];
+      const lockIdsPractice = ["cfgTimer","cfgTimeLimit","cfgSequential","cfgPartialMultiPoints","cfgHideResultsDetails","cfgLockResults","cfgPin","btnToggleCfgPin","cfgOptions"];
+      const lockIdsMillion  = ["cfgTimer","cfgTimeLimit","cfgSequential","cfgPartialMultiPoints","cfgHideResultsDetails","cfgLockResults","cfgPin","btnToggleCfgPin","cfgOptions","cfgCount"];
 
       const applyLock = (id, locked) => {
         const el = document.getElementById(id);
@@ -828,6 +838,9 @@
         state.config.lockResults = false;
         state.config.pin = "";
 
+
+        if (dom.cfgHideResultsDetails) dom.cfgHideResultsDetails.checked = false;
+        state.config.hideResultsDetails = false;
         // Valores sugeridos
         if (dom.cfgTimer) dom.cfgTimer.checked = false;
         if (dom.timerRow) { dom.timerRow.classList.add("hidden"); dom.timerRow.classList.remove("flex"); }
@@ -855,6 +868,9 @@
         if (dom.cfgPartialMultiPoints) dom.cfgPartialMultiPoints.checked = false;
         if (dom.cfgSequential) dom.cfgSequential.checked = true;
         if (dom.cfgLockResults) dom.cfgLockResults.checked = false;
+
+        if (dom.cfgHideResultsDetails) dom.cfgHideResultsDetails.checked = false;
+        state.config.hideResultsDetails = false;
         if (dom.pinRow) { dom.pinRow.classList.add("hidden"); dom.pinRow.classList.remove("flex"); }
         if (dom.cfgPin) dom.cfgPin.value = "";
         state.config.partialMultiplePoints = false;
@@ -1023,6 +1039,7 @@ dom.cfgTheme.value = state.config.theme;
       dom.timerRow.classList.toggle("flex", !!state.config.hasTimer);
       dom.cfgSequential.checked = !!state.config.sequentialMode;
       dom.cfgPartialMultiPoints.checked = !!state.config.partialMultiplePoints;
+      dom.cfgHideResultsDetails.checked = !!state.config.hideResultsDetails;
       dom.cfgShuffleQ.checked = !!state.config.shuffleQuestions;
       dom.cfgShuffleO.checked = !!state.config.shuffleOptions;
 
@@ -1050,8 +1067,10 @@ dom.cfgTheme.value = state.config.theme;
       state.config.timeLimit = clampInt(dom.cfgTimeLimit.value, 1, 999, 30);
       state.config.sequentialMode = !!dom.cfgSequential.checked;
       state.config.partialMultiplePoints = !!dom.cfgPartialMultiPoints.checked;
+      state.config.hideResultsDetails = !!(dom.cfgHideResultsDetails && dom.cfgHideResultsDetails.checked);
       // Puntaje parcial SOLO aplica en Evaluación y con 4–6 opciones
       if (state.config.mode !== "evaluation" || !(state.config.optionsCount >= 4 && state.config.optionsCount <= 6)) state.config.partialMultiplePoints = false;
+      if (state.config.mode !== "evaluation") state.config.hideResultsDetails = false;
       state.config.shuffleQuestions = !!dom.cfgShuffleQ.checked;
       state.config.shuffleOptions = !!dom.cfgShuffleO.checked;
 
@@ -1495,6 +1514,7 @@ NOTA: Reemplaza {TEMA} y {N_PREGUNTAS} antes de usar este prompt.
           isPractice,
           // En modo práctica el aprendiz decide estos parámetros al inicio.
           partialMultiplePoints: (mode === "evaluation" && (Number(state.config.optionsCount || 4) >= 4) && (Number(state.config.optionsCount || 4) <= 6)) ? !!state.config.partialMultiplePoints : false,
+          hideResultsDetails: (mode === "evaluation") ? !!state.config.hideResultsDetails : false,
           hasTimer: (mode === "millionaire") ? false : (isPractice ? false : !!state.config.hasTimer),
           timeLimit: (mode === "millionaire") ? 30 : (isPractice ? 30 : state.config.timeLimit),
           sequentialMode: (mode === "millionaire") ? true : (isPractice ? true : !!state.config.sequentialMode),
@@ -3522,7 +3542,7 @@ function showWalkAway(prize, safeStep, safeMoney){
           </button>
         </div>
 
-        <div class="flex flex-wrap gap-3 justify-center mb-6">
+        <div id="res-filters" class="flex flex-wrap gap-3 justify-center mb-6">
           <button id="filter-all" class="filter-btn px-6 py-3 rounded-2xl border-2 border-slate-200 font-black text-xs uppercase tracking-widest active">Todas</button>
           <button id="filter-ok" class="filter-btn px-6 py-3 rounded-2xl border-2 border-slate-200 font-black text-xs uppercase tracking-widest">Correctas</button>
           <button id="filter-bad" class="filter-btn px-6 py-3 rounded-2xl border-2 border-slate-200 font-black text-xs uppercase tracking-widest">Incorrectas</button>
@@ -5221,14 +5241,26 @@ const selected = this.userAnswers[this.currentIndex] || [];
 
           if (verifyEl) verifyEl.innerText = "Código de verificación: " + verify;
 
-          const fAll = document.getElementById("filter-all");
-          const fOk = document.getElementById("filter-ok");
-          const fBad = document.getElementById("filter-bad");
-          if (fAll) fAll.onclick = () => this.setFilter("all");
-          if (fOk) fOk.onclick = () => this.setFilter("ok");
-          if (fBad) fBad.onclick = () => this.setFilter("bad");
+          const filtersWrap = document.getElementById("res-filters");
+          const resList = document.getElementById("res-list");
+          if (CONFIG_DATA.hideResultsDetails) {
+            if (filtersWrap) filtersWrap.classList.add("hidden");
+            if (resList) resList.classList.add("hidden");
+            if (resList) resList.innerHTML = "";
+          } else {
+            if (filtersWrap) filtersWrap.classList.remove("hidden");
+            if (resList) resList.classList.remove("hidden");
 
-          this.setFilter("all");
+            const fAll = document.getElementById("filter-all");
+            const fOk = document.getElementById("filter-ok");
+            const fBad = document.getElementById("filter-bad");
+            if (fAll) fAll.onclick = () => this.setFilter("all");
+            if (fOk) fOk.onclick = () => this.setFilter("ok");
+            if (fBad) fBad.onclick = () => this.setFilter("bad");
+
+            this.setFilter("all");
+          }
+
         }
 
         this.saveSession({ finished: true });
@@ -5684,6 +5716,8 @@ const yHeaderEnd = addHeader.call(this);
 
 
         // Detalle de incorrectas (pregunta + respuesta marcada + respuesta(s) correcta(s))
+
+        if (!CONFIG_DATA.hideResultsDetails) {
         if (badCount > 0) {
           const detailW = pageW - (margin * 2);
           const indent = 14;
@@ -5736,6 +5770,8 @@ const yHeaderEnd = addHeader.call(this);
           y += 8;
         }
 
+        }
+
         // Audit events
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
@@ -5746,7 +5782,7 @@ const yHeaderEnd = addHeader.call(this);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
 
-        const auditLabel = (k) => {
+const auditLabel = (k) => {
           const map = {
             tab_hidden: "Cambio a otra pestaña/ventana",
             tab_visible: "Volvió a la evaluación",
@@ -6579,7 +6615,7 @@ document.addEventListener("visibilitychange", () => {
       // config bindings
       [
         dom.cfgTitle, dom.cfgInstructor, dom.cfgCount, dom.cfgOptions, dom.cfgPartialMultiPoints,
-        dom.cfgTimer, dom.cfgTimeLimit, dom.cfgSequential, dom.cfgShuffleQ, dom.cfgShuffleO,
+        dom.cfgHideResultsDetails, dom.cfgTimer, dom.cfgTimeLimit, dom.cfgSequential, dom.cfgShuffleQ, dom.cfgShuffleO,
         dom.cfgLockResults, dom.cfgPin
       ].forEach((el) => {
         el.addEventListener("input", () => {
