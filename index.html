@@ -1921,16 +1921,51 @@ NOTA: Reemplaza {TEMA} y {N_PREGUNTAS} antes de usar este prompt.
     .reportActions{ margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
     .reportActions .btn{ padding:10px 12px; }
 
+
+    /* Pre-inicio: datos del aprendiz */
+    .prestart{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:18px; z-index:99999;
+      background: radial-gradient(1200px 600px at 30% 10%, rgba(59,130,246,.25), transparent 70%),
+                  radial-gradient(900px 500px at 70% 40%, rgba(245,158,11,.18), transparent 70%),
+                  rgba(0,0,0,.65);
+      backdrop-filter: blur(10px);
+    }
+    .prestart.open{ display:flex; }
+    .prestart-card{
+      width:min(560px, 92vw);
+      border-radius:24px;
+      padding:18px;
+      background: rgba(15,23,42,.92);
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow: 0 28px 80px rgba(0,0,0,.55);
+      color:#fff;
+    }
+    .prestart-title{ font-weight:900; letter-spacing:.10em; text-transform:uppercase; font-size:14px; opacity:.9; }
+    .prestart-sub{ margin-top:8px; font-weight:800; color:rgba(255,255,255,.78); font-size:13px; }
+    .prestart-label{ display:block; margin-top:14px; font-weight:900; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.72); }
+    .prestart-input{
+      width:100%;
+      margin-top:8px;
+      border-radius:16px;
+      padding:12px 14px;
+      outline:none;
+      font-weight:900;
+      background: rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.16);
+      color:#fff;
+    }
+    .prestart-input:focus{ border-color: rgba(255,255,255,.35); box-shadow: 0 0 0 4px rgba(255,255,255,.08); }
+
     /* Impresión: mostrar solo el reporte final (ideal para Guardar como PDF) */
     @media print{
       body{ background:#fff !important; color:#000 !important; }
-      .wrap, .grid, .panel, .ladder, .top, .modal{ display:none !important; }
+      .wrap, .grid, .panel, .ladder, .top, .modal, .prestart{ display:none !important; }
       #confettiCanvas{ display:none !important; }
       #winOverlay, #loseOverlay, #walkOverlay{ position:static !important; inset:auto !important; background:#fff !important; display:block !important; }
       #winCard, #loseCard, #walkCard{ background:#fff !important; color:#000 !important; border:none !important; box-shadow:none !important; }
       .reportWrap{ border:1px solid #e5e7eb !important; background:#fff !important; }
       .reportItem{ border:1px solid #e5e7eb !important; background:#fff !important; }
       .reportTag, .reportSub, .reportItem .k{ color:#334155 !important; }
+      .reportItem .v, .reportDateVal{ color:#000 !important; }
       .reportTitle{ color:#000 !important; text-shadow:none !important; }
       .reportActions, .btn{ display:none !important; }
     }
@@ -2006,6 +2041,21 @@ NOTA: Reemplaza {TEMA} y {N_PREGUNTAS} antes de usar este prompt.
     </div>
   </div>
 
+  <div id="prestart" class="prestart open" role="dialog" aria-modal="true">
+    <div class="prestart-card">
+      <div class="prestart-title">Datos del aprendiz</div>
+      <div class="prestart-sub">Antes de iniciar el juego, registre los datos.</div>
+
+      <label class="prestart-label" for="psName">Nombre completo</label>
+      <input id="psName" class="prestart-input" type="text" autocomplete="name" />
+
+      <label class="prestart-label" for="psProgram">Ficha o Programa</label>
+      <input id="psProgram" class="prestart-input" type="text" />
+
+      <button id="psStart" class="btn primary" type="button" style="width:100%; margin-top:14px;">Iniciar juego</button>
+    </div>
+  </div>
+
   <div id="modal" class="modal" role="dialog" aria-modal="true">
     <div class="modal-card">
       <div class="modal-title" id="modalTitle">Ayuda</div>
@@ -2042,6 +2092,16 @@ NOTA: Reemplaza {TEMA} y {N_PREGUNTAS} antes de usar este prompt.
       if (!raw) return "";
       if (!raw.includes(";")) return raw;
       return raw.split(";").map(s=>s.trim()).filter(Boolean)[0] || "";
+    };
+
+    const escHtml = (s) => {
+      const str = String(s ?? "");
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
     };
 
     // ===== Audio (Web Audio, sin archivos externos) + persistencia =====
@@ -2318,10 +2378,13 @@ NOTA: Reemplaza {TEMA} y {N_PREGUNTAS} antes de usar este prompt.
     const st = {
       idx: 0,
       correctCount: 0,
-      startedAt: performance.now(),
+      startedAt: 0,
       endedAt: 0,
+      learnerName: "",
+      learnerProgram: "",
+      startedIso: "",
       selected: null,
-      locked: false,
+      locked: true,
       confirmOpen: false,
       clickBlockUntil: 0,
       used5050: false,
@@ -2333,6 +2396,51 @@ NOTA: Reemplaza {TEMA} y {N_PREGUNTAS} antes de usar este prompt.
       currentAward: 0,     // monto en curso (pregunta anterior superada)
       pulseN: 0            // escalón a pulsar al subir
     };
+
+    // ==============================
+    // Datos del aprendiz (obligatorio antes de jugar)
+    // ==============================
+    function openPrestart(){
+      const el = document.getElementById("prestart");
+      if (el) el.classList.add("open");
+      try { const i = document.getElementById("psName"); if (i) i.focus(); } catch(e){}
+      st.locked = true;
+    }
+    function closePrestart(){
+      const el = document.getElementById("prestart");
+      if (el) el.classList.remove("open");
+    }
+    function startAfterPrestart(){
+      const name = (document.getElementById("psName").value || "").trim();
+      const prog = (document.getElementById("psProgram").value || "").trim();
+      if (!name || !prog){
+        alert("Ingrese Nombre completo y Ficha o Programa.");
+        return;
+      }
+      st.learnerName = name;
+      st.learnerProgram = prog;
+      st.startedAt = performance.now();
+      st.startedIso = new Date().toISOString();
+      st.endedAt = 0;
+      st.locked = false;
+      closePrestart();
+    }
+    (function wirePrestart(){
+      const btn = document.getElementById("psStart");
+      if (btn) btn.addEventListener("click", startAfterPrestart);
+      ["psName","psProgram"].forEach((id) => {
+        const inp = document.getElementById(id);
+        if (!inp) return;
+        inp.addEventListener("keydown", (e) => {
+          if (e.key === "Enter"){
+            e.preventDefault();
+            startAfterPrestart();
+          }
+        });
+      });
+      openPrestart();
+    })();
+
     // UI ladder
     const ladderEl = $("ladder");
     function renderLadder(activeN, safeStep, nextN){
@@ -2553,6 +2661,11 @@ NOTA: Reemplaza {TEMA} y {N_PREGUNTAS} antes de usar este prompt.
         premio_actual: (st.currentAward || '0'),
         zona_segura: (st.safeStepReached || 0),
         monto_zona_segura: (st.safeReached || '0'),
+        aprendiz_nombre: (st.learnerName || ''),
+        ficha_programa: (st.learnerProgram || ''),
+        tema: (CONFIG.theme || ''),
+        instructor: (CONFIG.instructor || ''),
+        inicio: (st.startedIso || ''),
         titulo: (document.title || ''),
         timestamp: new Date().toISOString()
       };
@@ -2562,7 +2675,7 @@ NOTA: Reemplaza {TEMA} y {N_PREGUNTAS} antes de usar este prompt.
     function formatIsoForHum(iso){
       try {
         const d = new Date(iso);
-        return d.toLocaleString('es-CO', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+        return d.toLocaleString('es-CO', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit' });
       } catch(e){
         return String(iso || '');
       }
@@ -2599,7 +2712,7 @@ NOTA: Reemplaza {TEMA} y {N_PREGUNTAS} antes de usar este prompt.
               '<div class="reportTag">REPORTE FINAL · MODO MILLONARIO</div>' +
               '<div class="reportTitle">' + headline + '</div>' +
               '<div class="reportSub">' + sub + '</div>' +
-              '<div class="reportSub" style="margin-top:6px;">Fecha: <b style="color:rgba(255,255,255,.92);">' + dateHuman + '</b></div>' +
+              '<div class="reportSub" style="margin-top:6px;">Fecha: <b class="reportDateVal">' + (dateHuman || '—') + '</b></div>' +
             '</div>' +
             '<div style="text-align:right; min-width:160px;">' +
               '<div class="reportTag">PREMIO FINAL</div>' +
@@ -2610,6 +2723,8 @@ NOTA: Reemplaza {TEMA} y {N_PREGUNTAS} antes de usar este prompt.
           '<div class="reportGrid">' +
             '<div class="reportItem"><div class="k">Correctas</div><div class="v">' + rep.correctas + ' / ' + rep.total_preguntas + '</div></div>' +
             '<div class="reportItem"><div class="k">Tiempo total</div><div class="v">' + rep.tiempo_total + '</div></div>' +
+            '<div class="reportItem"><div class="k">Aprendiz</div><div class="v">' + escHtml(rep.aprendiz_nombre || '—') + '</div></div>' +
+            '<div class="reportItem"><div class="k">Ficha / Programa</div><div class="v">' + escHtml(rep.ficha_programa || '—') + '</div></div>' +
             '<div class="reportItem"><div class="k">Nivel alcanzado</div><div class="v">' + rep.nivel_alcanzado + '</div></div>' +
             '<div class="reportItem"><div class="k">Zona segura</div><div class="v">' + safeText + '</div></div>' +
           '</div>' +
@@ -5148,6 +5263,8 @@ const selected = this.userAnswers[this.currentIndex] || [];
 
       finish(fromRestore) {
         clearInterval(this.timerId);
+        // Momento exacto de finalización (para reportes)
+        this.submittedAt = this.submittedAt || nowIso();
         // Tiempo total (aunque no exista cronómetro)
         this.endedAtMs = Date.now();
         const usedByTimer = (CONFIG_DATA.hasTimer ? (this.totalSeconds - this.secondsLeft) : 0);
@@ -5324,7 +5441,7 @@ const selected = this.userAnswers[this.currentIndex] || [];
         const pageW = doc.internal.pageSize.getWidth();
         const margin = 40;
 
-        const dateStrShort = new Date(this.submittedAt || nowIso()).toLocaleDateString('es-CO');
+        const dateStrShort = new Date(this.submittedAt || nowIso()).toLocaleString('es-CO', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit' });
 
         const total = this.sessionPool.length;
         const pct = Math.round((this.score / total) * 100);
@@ -5478,7 +5595,7 @@ function drawSenaLogoWhite(cx, yTop) {
   doc.setTextColor(slate.r, slate.g, slate.b);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
-  doc.text("FECHA DE IMPRESIÓN", pageW - margin, y + 10, { align: "right" });
+  doc.text("FECHA Y HORA DE REALIZACION", pageW - margin, y + 10, { align: "right" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
@@ -5836,7 +5953,7 @@ const auditLabel = (k) => {
         const stamp = String(CONFIG_DATA.evStamp || "").trim() || (() => {
           const d = new Date(this.submittedAt || nowIso());
           const pad = (n) => String(n).padStart(2, "0");
-          return String(d.getFullYear()) + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes());
+          return String(d.getFullYear()) + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
         })();
 
         const learnerSafe = String(this.learnerName || "APRENDIZ")
@@ -5986,12 +6103,12 @@ doc.setTextColor(slate.r, slate.g, slate.b);
 doc.text("Centro de Comercio y Servicios", margin, 102);
 
 // Fecha impresión (derecha)
-const dateStrShort = new Date().toLocaleDateString("es-CO");
+const dateStrShort = new Date(this.submittedAt || nowIso()).toLocaleString('es-CO', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit' });
 setFont("bold");
 doc.setFontSize(8);
 doc.setTextColor(slate.r, slate.g, slate.b);
 // En una sola línea y con salto para la fecha (evita solaparse con el logo)
-doc.text("FECHA DE IMPRESIÓN", pageW - margin, 128, { align: "right" });
+doc.text("FECHA Y HORA DE REALIZACION", pageW - margin, 128, { align: "right" });
 setFont("normal");
 doc.setFontSize(10);
 doc.setTextColor(0, 0, 0);
@@ -6576,7 +6693,7 @@ document.addEventListener("visibilitychange", () => {
       const stamp = (() => {
         const d = new Date();
         const pad = (n) => String(n).padStart(2, "0");
-        return String(d.getFullYear()) + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes());
+        return String(d.getFullYear()) + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
       })();
       const pack = buildQuizPack(stamp);
       if (!pack) return;
