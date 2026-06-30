@@ -4808,7 +4808,7 @@ function showWalkAway(prize, safeStep, safeMoney){
       const deck = shuffle((Array.isArray(BANK) ? BANK : []).map(function(q){
         return { key:String((q.__i != null ? q.__i : q.pregunta) || ""), pregunta:String(q.pregunta || ""), correcta:String((q.correctas && q.correctas[0]) || ""), incorrectas:Array.isArray(q.incorrectas) ? q.incorrectas.map(String).filter(Boolean) : [] };
       }).filter(function(q){ return q.pregunta && q.correcta && q.incorrectas.length >= (optionsCount - 1); }));
-      const st = { turn:0, dice:[1,1], pending:0, answering:false, rolling:false, qIndex:0, current:null, selected:null, timer:null, remaining:timePerQuestion, ended:false, removedOptions:{}, cede:null, resolving:false, finalChallenge:null, targetType:"normal", challenge:null, doubleChallenge:null, winner:null, animTrail:[], startedAt:Date.now(), eventLog:[], oneDieThisTurn:false, debateActive:false, debateTimer:null, extraRollMode:false, currentResponder:null, hiddenRollDigits:[], hiddenRollDouble:false };
+      const st = { turn:0, dice:[1,1], pending:0, answering:false, rolling:false, qIndex:0, current:null, selected:null, timer:null, remaining:timePerQuestion, ended:false, removedOptions:{}, cede:null, resolving:false, finalChallenge:null, targetType:"normal", challenge:null, doubleChallenge:null, winner:null, animTrail:[], startedAt:Date.now(), eventLog:[], oneDieThisTurn:false, debateActive:false, debateTimer:null, extraRollMode:false, currentResponder:null, hiddenRollDigits:[], hiddenRollDouble:false, usedGlobalQuestions:{} };
       function logEvent(msg){
         try{
           st.eventLog.push({ tiempo:new Date().toLocaleTimeString(), evento:String(msg || "") });
@@ -4834,6 +4834,8 @@ function showWalkAway(prize, safeStep, safeMoney){
         try{
           data.teams.forEach(function(src, i){ if (!teams[i]) return; Object.assign(teams[i], src); teams[i].id = i; teams[i].name = "Equipo " + (i+1); teams[i].color = COLORS[i]; });
           Object.assign(st, data.st);
+          if (!st.usedGlobalQuestions) st.usedGlobalQuestions = {};
+          for (let i = deck.length - 1; i >= 0; i--) { if (hasGlobalQuestion(deck[i])) deck.splice(i, 1); }
           st.timer = null; st.current = null; st.answering = false; st.rolling = false; st.resolving = false; st.selected = null; st.cede = null; st.debateTimer = null; st.debateActive = false;
           st.turn = Math.max(0, Math.min(teams.length - 1, Number(st.turn || 0)));
           logEvent("Partida restaurada desde guardado local.");
@@ -5237,15 +5239,27 @@ function showWalkAway(prize, safeStep, safeMoney){
       }
 
       function questionKey(q){
-        return String((q && (q.key || q.pregunta)) || "").trim().toLowerCase();
+        // La clave se basa en el texto de la pregunta para evitar repetirla aunque exista duplicada en varias filas del Excel.
+        return String((q && q.pregunta) || (q && q.key) || "").trim().toLowerCase().replace(/\s+/g, " ");
       }
       function hasSeenQuestion(team, q){
         const key = questionKey(q);
         return !!(key && team && team.usedQuestions && team.usedQuestions[key]);
       }
+      function hasGlobalQuestion(q){
+        const key = questionKey(q);
+        return !!(key && st.usedGlobalQuestions && st.usedGlobalQuestions[key]);
+      }
       function markQuestionSeen(team, q){
         const key = questionKey(q);
         if (key && team) team.usedQuestions[key] = true;
+      }
+      function markQuestionGlobal(q){
+        const key = questionKey(q);
+        if (key) {
+          if (!st.usedGlobalQuestions) st.usedGlobalQuestions = {};
+          st.usedGlobalQuestions[key] = true;
+        }
       }
       function getQuestion(teamIdx){
         if (!deck.length) return null;
@@ -5253,10 +5267,17 @@ function showWalkAway(prize, safeStep, safeMoney){
         for (let i = 0; i < deck.length; i++) {
           const idx = (st.qIndex + i) % deck.length;
           const q = deck[idx];
-          if (!hasSeenQuestion(team, q)) {
-            st.qIndex = (idx + 1) % deck.length;
-            return q;
+          if (hasGlobalQuestion(q) || hasSeenQuestion(team, q)) {
+            deck.splice(idx, 1);
+            if (!deck.length) return null;
+            if (idx < st.qIndex) st.qIndex = Math.max(0, st.qIndex - 1);
+            i -= 1;
+            continue;
           }
+          deck.splice(idx, 1); // sin reemplazo: al salir, se elimina automáticamente del banco de la partida
+          st.qIndex = deck.length ? (idx % deck.length) : 0;
+          markQuestionGlobal(q);
+          return q;
         }
         return null;
       }
