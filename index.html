@@ -221,6 +221,366 @@
     .topTeams[data-teams="7"] .topTeamLabel, .topTeams[data-teams="8"] .topTeamLabel{ font-size:7px !important; letter-spacing:.05em !important; }
     @media (max-width:1400px){ .topTeams{ grid-template-columns:repeat(auto-fit,minmax(150px,1fr)) !important; } }
 
+
+
+/* =========================================================
+   REDISEÑO VISUAL INICIAL · SOLO ESTILOS
+   No modifica IDs, eventos, funciones ni lógica del generador.
+   ========================================================= */
+:root{
+  --sena:#00a627;
+  --sena-dark:#008a20;
+  --blue:#2563eb;
+  --blue-dark:#1d4ed8;
+  --orange:#f97316;
+  --purple:#7c3aed;
+  --danger:#ef4444;
+  --ink:#0f172a;
+  --muted:#64748b;
+  --bg:#f8fafc;
+  --card:#ffffff;
+  --border:#e5e7eb;
+  --soft-border:#dbe3ec;
+  --shadow:0 8px 30px rgba(15,23,42,.06);
+  --shadow-strong:0 18px 50px rgba(15,23,42,.10);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(57,169,0,.06), transparent 28%),
+    linear-gradient(180deg,#fbfdff 0%,#f7fafc 45%,#ffffff 100%) !important;
+  color:#101828;
+  font-family:'Montserrat',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif !important;
+}
+main.mx-auto{
+  width:100% !important;
+  max-width:none !important;
+  padding:0 22px 28px !important;
+}
+/* Barra superior tipo panel institucional */
+main.mx-auto > section.text-center:first-child{
+  margin-left:-22px;
+  margin-right:-22px;
+  height:86px;
+  padding:0 42px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:22px;
+  text-align:left !important;
+  background:rgba(255,255,255,.94);
+  border-bottom:1px solid #dfe6ee;
+  box-shadow:0 2px 8px rgba(15,23,42,.04);
+  position:sticky;
+  top:0;
+  z-index:50;
+  backdrop-filter:blur(14px);
+}
+main.mx-auto > section.text-center:first-child img{
+  width:72px !important;
+  height:72px !important;
+  margin:0 !important;
+  object-fit:contain;
+}
+main.mx-auto > section.text-center:first-child h1{
+  margin:0 !important;
+  font-size:38px !important;
+  line-height:1 !important;
+  letter-spacing:-.055em !important;
+  font-weight:1000 !important;
+  color:#101828 !important;
+}
+main.mx-auto > section.text-center:first-child h1 span{
+  color:var(--sena) !important;
+  font-style:normal !important;
+}
+main.mx-auto > section.text-center:first-child p{
+  margin:6px 0 0 !important;
+  font-size:13px !important;
+  letter-spacing:0 !important;
+  text-transform:none !important;
+  color:#667085 !important;
+  font-weight:700 !important;
+}
+/* Instrucciones compactas */
+main.mx-auto > section.card:nth-of-type(2){
+  margin-top:22px !important;
+  padding:0 !important;
+  border-radius:14px !important;
+  border:1px solid rgba(0,166,39,.20) !important;
+  box-shadow:none !important;
+  background:linear-gradient(180deg,rgba(248,255,250,.98),rgba(255,255,255,.98)) !important;
+  overflow:hidden;
+}
+main.mx-auto > section.card:nth-of-type(2) .grid{
+  display:block !important;
+}
+main.mx-auto > section.card:nth-of-type(2) .lg\:col-span-2{
+  padding:24px 28px !important;
+}
+main.mx-auto > section.card:nth-of-type(2) .flex.items-center.gap-3 h2{
+  font-size:16px !important;
+  letter-spacing:-.02em !important;
+  text-transform:none !important;
+}
+main.mx-auto > section.card:nth-of-type(2) ol{
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:18px;
+  margin-top:14px !important;
+  padding:0 !important;
+}
+main.mx-auto > section.card:nth-of-type(2) ol li{
+  list-style:none !important;
+  font-size:13px !important;
+  font-weight:800 !important;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+main.mx-auto > section.card:nth-of-type(2) ol li span:first-child{
+  display:inline-flex;
+  width:22px;
+  height:22px;
+  border-radius:999px;
+  align-items:center;
+  justify-content:center;
+  margin:0 !important;
+  color:#fff !important;
+  background:var(--sena) !important;
+  font-size:11px !important;
+}
+main.mx-auto > section.card:nth-of-type(2) .kbd,
+main.mx-auto > section.card:nth-of-type(2) .mt-5,
+main.mx-auto > section.card:nth-of-type(2) .soft{display:none !important;}
+/* Estructura principal */
+main.mx-auto > section.mt-10.grid{
+  margin-top:18px !important;
+  grid-template-columns:minmax(530px,1fr) minmax(540px,1fr) !important;
+  gap:18px !important;
+}
+.card{
+  border-radius:16px !important;
+  border:1px solid #e6ebf1 !important;
+  background:rgba(255,255,255,.96) !important;
+  box-shadow:var(--shadow) !important;
+}
+main.mx-auto > section.mt-10.grid > .card{
+  padding:20px 22px !important;
+}
+.card h2{
+  font-size:16px !important;
+  font-weight:1000 !important;
+  letter-spacing:-.02em !important;
+}
+.card .flex.items-center.gap-3 > span{
+  width:28px !important;
+  height:28px !important;
+  border-radius:10px !important;
+  background:#ecfdf3 !important;
+}
+.card p.mt-2{
+  margin-top:8px !important;
+  font-size:11px !important;
+  color:#667085 !important;
+  font-weight:700 !important;
+}
+/* Zona de carga */
+#dropzone{
+  margin-top:14px !important;
+  min-height:205px;
+  padding:18px !important;
+  border:1.8px dashed #cfd8e3 !important;
+  border-radius:14px !important;
+  background:#fbfdff !important;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+#dropzone:hover{border-color:rgba(0,166,39,.55) !important;background:#f8fff9 !important;}
+#dropzone .w-14,
+#dropzone .sm\:w-16{
+  width:46px !important;
+  height:46px !important;
+  border-radius:14px !important;
+  background:#f1fff4 !important;
+  color:var(--sena) !important;
+}
+#dzIcon{color:var(--sena) !important;font-size:20px !important;}
+#dropzone .text-sm.font-black{font-size:14px !important;}
+#dropzone .text-xs{font-size:12px !important;}
+#fileMeta span{
+  border-radius:10px !important;
+  border-color:#d9e1ea !important;
+  padding:8px 12px !important;
+}
+label:has(#fileInput), .btn-sena{
+  border-radius:12px !important;
+  background:linear-gradient(180deg,#16c20d,#06960a) !important;
+  box-shadow:0 8px 18px rgba(0,166,39,.25) !important;
+}
+#btnDownloadSample,#btnDownloadPromptIA{
+  color:#009b26 !important;
+  font-size:12px !important;
+  text-decoration-thickness:2px;
+}
+/* Modos */
+.mode-seg{
+  gap:10px !important;
+  padding:0 !important;
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  width:100%;
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+}
+.mode-btn{
+  justify-content:center;
+  height:40px;
+  border-radius:8px !important;
+  border:1px solid #dce4ee !important;
+  background:#fff !important;
+  letter-spacing:.06em !important;
+  font-size:12px !important;
+  box-shadow:0 3px 10px rgba(15,23,42,.04);
+}
+.mode-btn[data-mode="evaluation"][aria-pressed="true"]{color:#475467 !important;background:#fff !important;border-color:#dce4ee !important;}
+.mode-btn[data-mode="practice"][aria-pressed="true"]{color:#7c3aed !important;background:#faf7ff !important;border-color:#e7d7ff !important;}
+.mode-btn[data-mode="millionaire"][aria-pressed="true"]{color:#ea580c !important;background:#fff7ed !important;border-color:#fed7aa !important;}
+.mode-btn[data-mode="parques"][aria-pressed="true"]{color:#fff !important;background:linear-gradient(180deg,#3b82f6,#2563eb) !important;border-color:#2563eb !important;box-shadow:0 8px 16px rgba(37,99,235,.25) !important;}
+#modeDesc{display:none !important;}
+/* Paneles inferiores */
+#sheetSelect,.card input,.card select{
+  border-radius:9px !important;
+  border:1px solid #d9e1ea !important;
+  background:#fff !important;
+  min-height:38px;
+  padding:9px 12px !important;
+  font-size:13px !important;
+  font-weight:700 !important;
+  color:#344054 !important;
+}
+.card input:focus,.card select:focus{
+  outline:none !important;
+  border-color:#86d78d !important;
+  box-shadow:0 0 0 3px rgba(0,166,39,.10) !important;
+}
+/* No bloquear interacción por estilos heredados en tarjetas bloqueadas visualmente */
+.card .pointer-events-none input:not(:disabled),
+.card .pointer-events-none select:not(:disabled),
+.card .pointer-events-none button:not(:disabled){pointer-events:auto !important;}
+.card .opacity-60{opacity:.88 !important;}
+#genPreviewQ,.rounded-2xl.border.border-slate-200.bg-white.p-3{
+  border-radius:12px !important;
+}
+/* Estadísticas */
+.soft{
+  border-radius:14px !important;
+  background:#fff !important;
+  border:1px solid #e6ebf1 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+}
+.soft .rounded-2xl{
+  border-radius:12px !important;
+}
+#statTotal,#statValid,#statSingle,#statMulti,#statQTotal,#topReady{
+  font-size:24px !important;
+  color:#2563eb !important;
+}
+#statValid{color:var(--sena) !important;}
+/* Configuración */
+/* Apariencia de tabs, sin modificar funcionalidad */
+.card:has(#cfgTitle) > .mt-6.grid:first-of-type::before{
+  content:'General                 Juego                 Equipos                 Seguridad';
+  display:block;
+  grid-column:1/-1;
+  white-space:pre;
+  word-spacing:72px;
+  border-bottom:1px solid #dce4ee;
+  padding:0 0 11px 54px;
+  margin-bottom:2px;
+  color:#475467;
+  font-size:12px;
+  font-weight:1000;
+}
+.card:has(#cfgTitle) > .mt-6.grid:first-of-type::after{
+  content:'';
+  grid-column:1/-1;
+  order:-1;
+}
+.card:has(#cfgTitle) .text-\[11px\]{
+  color:#475467 !important;
+  letter-spacing:0 !important;
+  text-transform:none !important;
+  font-size:11px !important;
+}
+#cfgTitle{grid-column:1/-1;}
+#cfgTitle,#cfgInstructor,#cfgTheme,#cfgCount,#cfgOptions,#cfgParquesTeams,#cfgParquesTime,#cfgParquesBoardSize{
+  height:38px !important;
+}
+#parquesTeamsWrap,#parquesTimeWrap,#parquesBoardWrap{display:block;}
+#parquesTeamsWrap.hidden,#parquesTimeWrap.hidden,#parquesBoardWrap.hidden{display:none !important;}
+#parquesTeamsWrap .mt-1,#parquesTimeWrap .mt-1,#parquesBoardWrap .mt-1{font-size:11px !important;color:#667085 !important;}
+.card label.soft{
+  min-height:74px;
+  padding:14px !important;
+}
+.card label.soft input[type="checkbox"]{
+  width:18px !important;
+  height:18px !important;
+  min-height:18px !important;
+  accent-color:var(--sena) !important;
+}
+.card label.soft .text-sm{font-size:13px !important;}
+.card label.soft .text-xs{font-size:11px !important;}
+#timerRow,#pinRow{margin-top:8px !important;}
+#cfgPin{padding-right:52px !important;}
+#btnPreview,#btnGenerate,#btnExportCSV,#btnClearResults,#btnClearSearch,#btnShowIssues,#btnClearFile{
+  border-radius:10px !important;
+  min-height:38px;
+  letter-spacing:.05em !important;
+}
+#btnGenerate{
+  background:linear-gradient(180deg,#10bb17,#07980c) !important;
+  box-shadow:0 10px 18px rgba(0,166,39,.24) !important;
+}
+#btnPreview{
+  background:#fff !important;
+  border-color:#dce4ee !important;
+  color:#101828 !important;
+}
+/* Visor resultados */
+section:has(#resultsTbody){
+  width:100% !important;
+  margin-top:18px !important;
+}
+section:has(#resultsTbody) > div{
+  background:#fff !important;
+  border:1px solid #e6ebf1 !important;
+  border-radius:16px !important;
+  box-shadow:var(--shadow) !important;
+}
+#resultsTbody tr td{font-size:12px !important;}
+thead th{font-size:10px !important;}
+/* Footer */
+footer{display:none !important;}
+@media (max-width:1100px){
+  main.mx-auto > section.mt-10.grid{grid-template-columns:1fr !important;}
+  main.mx-auto > section.card:nth-of-type(2) ol{grid-template-columns:1fr !important;}
+}
+@media (max-width:720px){
+  main.mx-auto{padding-left:12px !important;padding-right:12px !important;}
+  main.mx-auto > section.text-center:first-child{margin-left:-12px;margin-right:-12px;padding:0 18px;height:auto;min-height:78px;}
+  main.mx-auto > section.text-center:first-child h1{font-size:30px !important;}
+  main.mx-auto > section.text-center:first-child p{display:none !important;}
+  .mode-seg{grid-template-columns:1fr 1fr !important;}
+}
+
 </style>
 </head>
 
@@ -4725,16 +5085,34 @@ function showWalkAway(prize, safeStep, safeMoney){
       document.addEventListener("keydown", function(ev){
         if (isTypingTarget(ev.target)) return;
         if (st.answering || st.rolling || st.ended) return;
-        if (ev.key === "." || ev.key === "Decimal" || ev.key === "Control" || ev.ctrlKey) {
+
+        // Control manual de dados en Parqués:
+        // 1-6 => uno de los dos dados queda con ese número y el otro dado
+        //        sale aleatorio entre los demás números. Así no puede salir doble.
+        // Ctrl o . => único caso permitido para forzar doble 6-6.
+        const triggerRoll = function(){
+          try {
+            if (typeof roll === "function" && !st.answering && !st.rolling && !st.ended) {
+              setTimeout(function(){
+                if (!st.answering && !st.rolling && !st.ended) roll();
+              }, 0);
+            }
+          } catch(e) {}
+        };
+
+        if (ev.key === "." || ev.key === "Decimal" || ev.key === "Control") {
           st.hiddenRollDouble = true;
           st.hiddenRollDigits = [];
           ev.preventDefault();
+          triggerRoll();
           return;
         }
+
         if (/^[1-6]$/.test(ev.key || "")) {
           st.hiddenRollDouble = false;
           st.hiddenRollDigits = [parseInt(ev.key, 10)];
           ev.preventDefault();
+          triggerRoll();
         }
       });
       function createSpecialCells(size){
