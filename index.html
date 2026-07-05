@@ -157,7 +157,7 @@
 
   
     /* V78: dos ayudas nuevas durante pregunta */
-    .overlayLifelines{ grid-template-columns:repeat(7,minmax(0,1fr)) !important; gap:8px !important; }
+    .overlayLifelines{ grid-template-columns:repeat(9,minmax(0,1fr)) !important; gap:8px !important; }
     .overlayLife .lifeCard{ min-height:76px; }
     .overlayLife .lifeIcon{ width:46px !important; height:46px !important; font-size:22px !important; border-radius:14px !important; flex:0 0 46px !important; }
     .overlayLife .lifeName{ font-size:clamp(12px,1.15vw,18px) !important; line-height:1.05 !important; }
@@ -170,7 +170,7 @@
     #lifeAddTime .lifeIcon{ background:linear-gradient(180deg,#38bdf8,#2563eb) !important; }
     #lifeDebate .lifeIcon{ background:linear-gradient(180deg,#a78bfa,#6d28d9) !important; }
     #lifeWrongPlayer .lifeIcon{ background:linear-gradient(180deg,#fb7185,#be123c) !important; }
-    .overlayLifelines.hasWrongPlayerHelp{ grid-template-columns:repeat(7,minmax(0,1fr)) !important; }
+    .overlayLifelines.hasWrongPlayerHelp{ grid-template-columns:repeat(9,minmax(0,1fr)) !important; }
     .overlayLifelines:not(.hasWrongPlayerHelp){ grid-template-columns:repeat(6,minmax(0,1fr)) !important; }
 
 
@@ -186,6 +186,8 @@
     .overlayLife .lifeDesc{ display:none !important; }
     .overlayLife .lifeState{ font-size:11px !important; line-height:1 !important; margin-top:3px !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }
     .overlayLifelines #life5050 .lifeIcon{ background:linear-gradient(180deg,#60a5fa,#2563eb) !important; }
+    .overlayLifelines #lifeRemoveOne .lifeIcon{ background:linear-gradient(180deg,#34d399,#059669) !important; }
+    .overlayLifelines #lifeShared .lifeIcon{ background:linear-gradient(180deg,#f472b6,#be185d) !important; }
     .overlayLifelines #lifeSecond .lifeIcon{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; }
     .overlayLifelines #lifeChange .lifeIcon{ background:linear-gradient(180deg,#fbbf24,#f97316) !important; }
     .overlayLifelines #lifeCede .lifeIcon{ background:linear-gradient(180deg,#5eead4,#0f766e) !important; }
@@ -4477,11 +4479,13 @@ function showWalkAway(prize, safeStep, safeMoney){
     .preHelpBox #lifeReroll .lifeIcon{ background:linear-gradient(180deg,#14b8a6,#0f766e); }
     .preHelpBox #lifeExtraStep .lifeIcon{ background:linear-gradient(180deg,#f59e0b,#ea580c); }
     .preHelpBox #lifeExtraRoll .lifeIcon{ background:linear-gradient(180deg,#6366f1,#4338ca); }
+    .preHelpBox #lifeDifference .lifeIcon{ background:linear-gradient(180deg,#f43f5e,#be123c); }
+    .preHelpBox #lifeReturn .lifeIcon{ background:linear-gradient(180deg,#22c55e,#15803d); }
 
     .underTeamsRow{ display:grid; grid-template-columns:minmax(180px,240px) 1fr; gap:14px; align-items:stretch; margin-top:12px; }
     .gameClockCard{ height:100%; min-height:112px; justify-content:center; }
     .underTeamsRow .preHelpBox{ margin:0; }
-    .underTeamsRow .preHelpGrid{ grid-template-columns:repeat(7,minmax(0,1fr)); gap:10px; }
+    .underTeamsRow .preHelpGrid{ grid-template-columns:repeat(9,minmax(0,1fr)); gap:8px; }
     .underTeamsRow .preHelpGrid .lifeBtn{ min-height:104px; padding:12px; }
     .underTeamsRow .preHelpGrid .lifeBtn .lifeCard{ grid-template-columns:52px 1fr; gap:10px; }
     .underTeamsRow .preHelpGrid .lifeBtn .lifeIcon{ width:52px; height:52px; font-size:23px; }
@@ -4489,7 +4493,9 @@ function showWalkAway(prize, safeStep, safeMoney){
     .underTeamsRow #lifeStealDie .lifeDesc,
     .underTeamsRow #lifeBlockHelp .lifeDesc,
     .underTeamsRow #lifeReroll .lifeDesc,
-    .underTeamsRow #lifeExtraStep .lifeDesc{ display:none !important; }
+    .underTeamsRow #lifeExtraStep .lifeDesc,
+    .underTeamsRow #lifeDifference .lifeDesc,
+    .underTeamsRow #lifeReturn .lifeDesc{ display:none !important; }
     @media (max-width:1300px){ .underTeamsRow{ grid-template-columns:1fr; } .underTeamsRow .preHelpGrid{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
     @media (max-width:720px){ .underTeamsRow .preHelpGrid{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
     @media (max-width:1200px){ .preHelpBox .preHelpGrid{ grid-template-columns:1fr; } }
@@ -4511,7 +4517,7 @@ function showWalkAway(prize, safeStep, safeMoney){
     .underTeamsRow .preHelpBox{ border-radius:26px; padding:20px 22px; background:linear-gradient(180deg,#fff,#fffaf0); }
     .underTeamsRow .preHelpBox .lifelineTitle{ margin:0 0 14px; font-size:13px; letter-spacing:.12em; display:flex; align-items:center; gap:10px; }
     .underTeamsRow .preHelpBox .lifelineTitle::before{ content:""; width:14px; height:14px; border-radius:999px; background:#f1f5f9; box-shadow:inset 0 0 0 1px rgba(15,23,42,.06); }
-    .underTeamsRow .preHelpGrid{ display:grid !important; grid-template-columns:repeat(7,minmax(0,1fr)) !important; gap:14px !important; }
+    .underTeamsRow .preHelpGrid{ display:grid !important; grid-template-columns:repeat(9,minmax(0,1fr)) !important; gap:10px !important; }
     .underTeamsRow .preHelpGrid .lifeBtn{ min-height:126px; padding:14px 12px; display:block; border-radius:20px; }
     .underTeamsRow .preHelpGrid .lifeBtn .lifeCard{ height:100%; display:grid; grid-template-columns:58px minmax(0,1fr); align-items:center; gap:12px; text-align:left; }
     .underTeamsRow .preHelpGrid .lifeBtn .lifeIcon{ width:58px; height:58px; font-size:26px; border-radius:999px; flex:0 0 auto; }
@@ -4687,7 +4693,7 @@ function showWalkAway(prize, safeStep, safeMoney){
     .gameClockCard .value{ font-size:27px !important; }
     .preHelpBox{ padding:10px 12px !important; border-radius:20px !important; box-shadow:0 8px 18px rgba(15,23,42,.045) !important; }
     .preHelpBox .lifelineTitle{ font-size:11px !important; margin-bottom:8px !important; }
-    .underTeamsRow .preHelpGrid{ grid-template-columns:repeat(7,minmax(0,1fr)) !important; gap:8px !important; }
+    .underTeamsRow .preHelpGrid{ grid-template-columns:repeat(9,minmax(0,1fr)) !important; gap:8px !important; }
     .underTeamsRow .preHelpGrid .lifeBtn{ min-height:78px !important; padding:8px 10px !important; border-radius:15px !important; }
     .underTeamsRow .preHelpGrid .lifeBtn .lifeCard{ grid-template-columns:44px 1fr !important; gap:8px !important; }
     .underTeamsRow .preHelpGrid .lifeBtn .lifeIcon{ width:44px !important; height:44px !important; font-size:20px !important; }
@@ -4755,7 +4761,7 @@ function showWalkAway(prize, safeStep, safeMoney){
     .questionPanel{ position:relative !important; }
     .questionPanel .overlayLifelines{
       display:grid !important;
-      grid-template-columns:repeat(7,minmax(0,1fr)) !important;
+      grid-template-columns:repeat(9,minmax(0,1fr)) !important;
       grid-auto-rows:1fr !important;
       gap:8px !important;
       width:100% !important;
@@ -4797,6 +4803,8 @@ function showWalkAway(prize, safeStep, safeMoney){
     .questionPanel .overlayLifelines .overlayLife .lifeDesc{ display:none !important; }
     .questionPanel .overlayLifelines .overlayLife .lifeState{ font-size:10px !important; padding:2px 7px !important; max-width:100% !important; white-space:nowrap !important; overflow:hidden !important; text-overflow:ellipsis !important; }
     .questionPanel #life5050 .lifeIcon{ background:linear-gradient(180deg,#60a5fa,#2563eb) !important; }
+    .questionPanel #lifeRemoveOne .lifeIcon{ background:linear-gradient(180deg,#34d399,#059669) !important; }
+    .questionPanel #lifeShared .lifeIcon{ background:linear-gradient(180deg,#f472b6,#be185d) !important; }
     .questionPanel #lifeSecond .lifeIcon{ background:linear-gradient(180deg,#c084fc,#9333ea) !important; }
     .questionPanel #lifeChange .lifeIcon{ background:linear-gradient(180deg,#fbbf24,#f97316) !important; }
     .questionPanel #lifeCede .lifeIcon{ background:linear-gradient(180deg,#5eead4,#0f766e) !important; }
@@ -4812,25 +4820,32 @@ function showWalkAway(prize, safeStep, safeMoney){
       position:fixed !important;
       inset:0 !important;
       z-index:99999 !important;
-      align-items:center !important;
+      align-items:flex-start !important;
       justify-content:center !important;
-      pointer-events:auto !important;
-      background:rgba(255,255,255,.72) !important;
-      backdrop-filter:blur(4px) !important;
+      pointer-events:none !important;
+      background:rgba(255,255,255,.24) !important;
+      backdrop-filter:blur(1px) !important;
+      padding-top:4.5vh !important;
     }
     .questionOverlay.debateMode #debateOverlay.debateOverlay{ display:flex !important; }
     #debateOverlay .debateBox{
-      min-width:min(760px,88vw) !important;
-      border:8px solid #7c3aed !important;
-      border-radius:38px !important;
-      background:#fff !important;
-      box-shadow:0 30px 110px rgba(15,23,42,.32) !important;
-      padding:34px 44px !important;
+      min-width:min(620px,82vw) !important;
+      border:6px solid rgba(124,58,237,.72) !important;
+      border-radius:32px !important;
+      background:rgba(255,255,255,.72) !important;
+      box-shadow:0 22px 80px rgba(15,23,42,.18) !important;
+      padding:22px 34px !important;
       text-align:center !important;
+      opacity:.78 !important;
+      transform:translateY(-12px) !important;
     }
-    #debateOverlay .debateTitle{ color:#140c69 !important; font-size:clamp(34px,4.2vw,70px) !important; font-weight:1000 !important; line-height:1 !important; letter-spacing:-.04em !important; }
-    #debateOverlay .debateCount{ color:#7c3aed !important; font-size:clamp(110px,16vw,240px) !important; font-weight:1000 !important; line-height:.82 !important; margin:18px 0 !important; }
-    #debateOverlay .debateMsg{ color:#0f172a !important; font-size:clamp(22px,2.4vw,42px) !important; font-weight:950 !important; }
+    #debateOverlay .debateTitle{ color:#140c69 !important; font-size:clamp(24px,3vw,46px) !important; font-weight:1000 !important; line-height:1 !important; letter-spacing:-.04em !important; }
+    #debateOverlay .debateCount{ color:#7c3aed !important; font-size:clamp(78px,11vw,160px) !important; font-weight:1000 !important; line-height:.82 !important; margin:10px 0 !important; }
+    #debateOverlay .debateMsg{ color:#0f172a !important; font-size:clamp(16px,1.7vw,28px) !important; font-weight:950 !important; }
+    .questionPanel .overlayLifelines .overlayLife .lifeCard{ grid-template-columns:42px minmax(0,1fr) !important; gap:7px !important; }
+    .questionPanel .overlayLifelines .overlayLife .lifeIcon{ width:40px !important; height:40px !important; min-width:40px !important; font-size:19px !important; }
+    .questionPanel .overlayLifelines .overlayLife .lifeName{ font-size:clamp(10px,.82vw,14px) !important; -webkit-line-clamp:2 !important; }
+    .questionPanel .overlayLifelines .overlayLife{ height:78px !important; min-height:78px !important; padding:7px 8px !important; }
     @media (max-width:1180px){ .questionPanel .overlayLifelines{ grid-template-columns:repeat(3,minmax(0,1fr)) !important; } }
 
 
@@ -4884,6 +4899,8 @@ function showWalkAway(prize, safeStep, safeMoney){
             <button id="lifeBlockHelp" class="lifeBtn" type="button"><i class="fa-solid fa-hand"></i> Bloqueo de ayuda</button>
             <button id="lifeReroll" class="lifeBtn" type="button"><i class="fa-solid fa-arrows-rotate"></i> Repetir lanzamiento</button>
             <button id="lifeExtraStep" class="lifeBtn" type="button"><i class="fa-solid fa-forward-step"></i> Paso extra</button>
+            <button id="lifeDifference" class="lifeBtn" type="button"><i class="fa-solid fa-minus"></i> Diferencia</button>
+            <button id="lifeReturn" class="lifeBtn" type="button"><i class="fa-solid fa-rotate-left"></i> Devolver</button>
             <button id="lifeExtraRoll" class="lifeBtn" type="button"><i class="fa-solid fa-dice-six"></i> Tiro adicional</button>
           </div>
         </div>
@@ -4974,6 +4991,8 @@ function showWalkAway(prize, safeStep, safeMoney){
       </div>
       <div class="overlayLifelines" aria-label="Ayudas disponibles en la pregunta">
         <button id="life5050" class="lifeBtn overlayLife" type="button"><i class="fa-solid fa-circle-half-stroke"></i> 50/50</button>
+        <button id="lifeRemoveOne" class="lifeBtn overlayLife" type="button"><i class="fa-solid fa-eraser"></i> Eliminar 1 opción</button>
+        <button id="lifeShared" class="lifeBtn overlayLife" type="button"><i class="fa-solid fa-handshake-angle"></i> Pregunta compartida</button>
         <button id="lifeSecond" class="lifeBtn overlayLife" type="button"><i class="fa-solid fa-repeat"></i> Segundo intento</button>
         <button id="lifeChange" class="lifeBtn overlayLife" type="button"><i class="fa-solid fa-rotate"></i> Cambio de pregunta</button>
         <button id="lifeCede" class="lifeBtn overlayLife" type="button"><i class="fa-solid fa-share"></i> Ceder pregunta</button>
@@ -5182,11 +5201,20 @@ function showWalkAway(prize, safeStep, safeMoney){
         return out;
       }
       const segmentSizes = buildSegments(boardSize, teamCount);
-      const teams = Array.from({length: teamCount}, function(_, i){ return { id:i, name:"Equipo " + (i+1), color:COLORS[i], pos:0, score:0, streak:0, correct:0, incorrect:0, fast:0, helps:{ fifty:true, change:true, second:true, cede:true, addTime:true, debate:true, double:true, skip:true, stealDie:true, blockHelp:true, reroll:true, extraStep:true, extraRoll:true }, aidsUsed:{ fifty:0, change:0, second:0, cede:0, addTime:0, debate:0, double:0, skip:0, stealDie:0, blockHelp:0, reroll:0, extraStep:0, extraRoll:0 }, specials:{ safe:0, challenge:0, penalty:0, arrowF:0, arrowB:0 }, doubleArmed:false, extraStepArmed:false, rerollArmed:false, extraRollArmed:false, extraRollTokens:0, players:[], playerCursor:0, skipTurns:0, skipSources:[], stolenDieTurns:0, blockHelpTurns:0, usedQuestions:{} }; });
+      const teams = Array.from({length: teamCount}, function(_, i){ return { id:i, name:"Equipo " + (i+1), color:COLORS[i], pos:0, score:0, streak:0, correct:0, incorrect:0, fast:0, helps:{ fifty:true, removeOne:true, shared:true, change:true, second:true, cede:true, addTime:true, debate:true, double:true, skip:true, stealDie:true, blockHelp:true, reroll:true, extraStep:true, extraRoll:true, difference:true, returnMove:true }, aidsUsed:{ fifty:0, removeOne:0, shared:0, change:0, second:0, cede:0, addTime:0, debate:0, double:0, skip:0, stealDie:0, blockHelp:0, reroll:0, extraStep:0, extraRoll:0, difference:0, returnMove:0 }, specials:{ safe:0, challenge:0, penalty:0, arrowF:0, arrowB:0 }, doubleArmed:false, extraStepArmed:false, rerollArmed:false, extraRollArmed:false, differenceArmed:null, returnMoveArmed:null, extraRollTokens:0, players:[], playerCursor:0, skipTurns:0, skipSources:[], stolenDieTurns:0, blockHelpTurns:0, differenceEffects:[], usedQuestions:{} }; });
+      function ensureTeamHelpDefaults(team){
+        if (!team) return;
+        team.helps = Object.assign({ fifty:true, removeOne:true, shared:true, change:true, second:true, cede:true, addTime:true, debate:true, double:true, skip:true, stealDie:true, blockHelp:true, reroll:true, extraStep:true, extraRoll:true, difference:true, returnMove:true }, team.helps || {});
+        team.aidsUsed = Object.assign({ fifty:0, removeOne:0, shared:0, change:0, second:0, cede:0, addTime:0, debate:0, double:0, skip:0, stealDie:0, blockHelp:0, reroll:0, extraStep:0, extraRoll:0, difference:0, returnMove:0 }, team.aidsUsed || {});
+        if (!Array.isArray(team.differenceEffects)) team.differenceEffects = [];
+        if (team.differenceArmed === undefined) team.differenceArmed = null;
+        if (team.returnMoveArmed === undefined) team.returnMoveArmed = null;
+      }
+      teams.forEach(ensureTeamHelpDefaults);
       const deck = shuffle((Array.isArray(BANK) ? BANK : []).map(function(q){
         return { key:String((q.__i != null ? q.__i : q.pregunta) || ""), pregunta:String(q.pregunta || ""), correcta:String((q.correctas && q.correctas[0]) || ""), incorrectas:Array.isArray(q.incorrectas) ? q.incorrectas.map(String).filter(Boolean) : [] };
       }).filter(function(q){ return q.pregunta && q.correcta && q.incorrectas.length >= (optionsCount - 1); }));
-      const st = { turn:0, dice:[1,1], pending:0, answering:false, rolling:false, qIndex:0, current:null, selected:null, timer:null, remaining:timePerQuestion, ended:false, removedOptions:{}, cede:null, resolving:false, finalChallenge:null, targetType:"normal", challenge:null, doubleChallenge:null, winner:null, animTrail:[], startedAt:Date.now(), eventLog:[], oneDieThisTurn:false, debateActive:false, debateTimer:null, extraRollMode:false, currentResponder:null, hiddenRollDigits:[], hiddenRollDouble:false, usedGlobalQuestions:{} };
+      const st = { turn:0, dice:[1,1], pending:0, rollOriginal:0, answering:false, rolling:false, qIndex:0, current:null, selected:null, timer:null, remaining:timePerQuestion, ended:false, removedOptions:{}, cede:null, resolving:false, finalChallenge:null, targetType:"normal", challenge:null, doubleChallenge:null, winner:null, animTrail:[], startedAt:Date.now(), eventLog:[], oneDieThisTurn:false, debateActive:false, debateTimer:null, extraRollMode:false, currentResponder:null, hiddenRollDigits:[], hiddenRollDouble:false, usedGlobalQuestions:{} };
       function logEvent(msg){
         try{
           st.eventLog.push({ tiempo:new Date().toLocaleTimeString(), evento:String(msg || "") });
@@ -5210,7 +5238,7 @@ function showWalkAway(prize, safeStep, safeMoney){
       function restoreSavedGame(data){
         if (!data || !Array.isArray(data.teams) || !data.st) return false;
         try{
-          data.teams.forEach(function(src, i){ if (!teams[i]) return; Object.assign(teams[i], src); teams[i].id = i; teams[i].name = "Equipo " + (i+1); teams[i].color = COLORS[i]; });
+          data.teams.forEach(function(src, i){ if (!teams[i]) return; Object.assign(teams[i], src); teams[i].id = i; teams[i].name = "Equipo " + (i+1); teams[i].color = COLORS[i]; ensureTeamHelpDefaults(teams[i]); });
           Object.assign(st, data.st);
           if (!st.usedGlobalQuestions) st.usedGlobalQuestions = {};
           for (let i = deck.length - 1; i >= 0; i--) { if (hasGlobalQuestion(deck[i])) deck.splice(i, 1); }
@@ -5438,13 +5466,16 @@ function showWalkAway(prize, safeStep, safeMoney){
       }
 
       function remainingHelps(t){
-        const n = (t.helps.fifty ? 1 : 0) + (t.helps.change ? 1 : 0) + (t.helps.second ? 1 : 0) + (t.helps.cede ? 1 : 0) + (t.helps.addTime ? 1 : 0) + (t.helps.debate ? 1 : 0) + (t.helps.double ? 1 : 0) + (t.helps.skip ? 1 : 0) + (t.helps.stealDie ? 1 : 0) + (t.helps.blockHelp ? 1 : 0) + (t.helps.reroll ? 1 : 0) + (t.helps.extraStep ? 1 : 0) + ((t.helps.extraRoll && (t.extraRollTokens || t.extraRollArmed)) ? 1 : 0);
-        return String(n) + "/13" + (t.doubleArmed ? " · Doble activo" : "") + (t.extraStepArmed ? " · Paso +2" : "") + (t.rerollArmed ? " · Repetir activo" : "") + (t.extraRollArmed ? " · Tiro adicional" : "") + ((t.extraRollTokens || 0) > 0 ? " · Tiro +" + t.extraRollTokens : "") + (t.skipTurns ? " · Pierde " + t.skipTurns : "") + (t.stolenDieTurns ? " · 1 dado" : "") + (t.blockHelpTurns ? " · Ayudas bloqueadas" : "");
+        ensureTeamHelpDefaults(t);
+        const n = (t.helps.fifty ? 1 : 0) + (t.helps.removeOne ? 1 : 0) + (t.helps.shared ? 1 : 0) + (t.helps.change ? 1 : 0) + (t.helps.second ? 1 : 0) + (t.helps.cede ? 1 : 0) + (t.helps.addTime ? 1 : 0) + (t.helps.debate ? 1 : 0) + (t.helps.double ? 1 : 0) + (t.helps.skip ? 1 : 0) + (t.helps.stealDie ? 1 : 0) + (t.helps.blockHelp ? 1 : 0) + (t.helps.reroll ? 1 : 0) + (t.helps.extraStep ? 1 : 0) + ((t.helps.extraRoll && (t.extraRollTokens || t.extraRollArmed)) ? 1 : 0) + (t.helps.difference ? 1 : 0) + (t.helps.returnMove ? 1 : 0);
+        return String(n) + "/17" + (t.doubleArmed ? " · Doble activo" : "") + (t.extraStepArmed ? " · Paso +2" : "") + (t.rerollArmed ? " · Repetir activo" : "") + (t.extraRollArmed ? " · Tiro adicional" : "") + (t.differenceArmed ? " · Diferencia activa" : "") + (t.returnMoveArmed ? " · Devolver activo" : "") + ((t.extraRollTokens || 0) > 0 ? " · Tiro +" + t.extraRollTokens : "") + (t.skipTurns ? " · Pierde " + t.skipTurns : "") + (t.stolenDieTurns ? " · 1 dado" : "") + (t.blockHelpTurns ? " · Ayudas bloqueadas" : "") + ((t.differenceEffects || []).length ? " · Diferencia pendiente" : "");
       }
 
       function renderLifelines(){
         const t = teams[st.turn];
         const b50 = $("life5050");
+        const bRemoveOne = $("lifeRemoveOne");
+        const bShared = $("lifeShared");
         const bChange = $("lifeChange");
         const bSecond = $("lifeSecond");
         const bCede = $("lifeCede");
@@ -5458,16 +5489,23 @@ function showWalkAway(prize, safeStep, safeMoney){
         const bReroll = $("lifeReroll");
         const bExtra = $("lifeExtraStep");
         const bExtraRoll = $("lifeExtraRoll");
-        if (!b50 || !bChange || !bSecond || !bCede || !bAddTime || !bDebate || !bWrongPlayer || !bDouble || !bSkip || !bStealDie || !bBlockHelp || !bReroll || !bExtra || !bExtraRoll) return;
+        const bDifference = $("lifeDifference");
+        const bReturn = $("lifeReturn");
+        ensureTeamHelpDefaults(t);
+        if (!b50 || !bRemoveOne || !bShared || !bChange || !bSecond || !bCede || !bAddTime || !bDebate || !bWrongPlayer || !bDouble || !bSkip || !bStealDie || !bBlockHelp || !bReroll || !bExtra || !bExtraRoll || !bDifference || !bReturn) return;
         const isFinal = !!(st.current && st.current.final);
         const isReto = !!(st.challenge && st.challenge.type === "challenge");
         const hasCedeCandidate = !!(st.answering && st.current && teams.some(function(tm){ return tm.id !== st.turn && !hasSeenQuestion(tm, st.current.q); }));
+        const hasSharedCandidate = !!(st.answering && st.current && teams.some(function(tm){ return tm.id !== st.turn; }));
+        const sharedBlockedBySpecial = !!(st.challenge || st.doubleChallenge || t.doubleArmed || (st.current && (st.current.landingPenalty || st.current.landingChallenge || st.current.doubleSecond)));
         const helpsBlocked = (t.blockHelpTurns || 0) > 0;
         const playersMode = hasPlayerNamesMode();
         const overlayGrid = document.querySelector(".overlayLifelines");
         if (overlayGrid) overlayGrid.classList.toggle("hasWrongPlayerHelp", playersMode);
         bWrongPlayer.style.display = playersMode ? "" : "none";
         b50.disabled = helpsBlocked || st.debateActive || !st.answering || isFinal || !t.helps.fifty || !!st.current?.used5050;
+        bRemoveOne.disabled = helpsBlocked || st.debateActive || !st.answering || isFinal || !t.helps.removeOne || !!st.current?.usedRemoveOne;
+        bShared.disabled = helpsBlocked || st.debateActive || !st.answering || isFinal || sharedBlockedBySpecial || !t.helps.shared || !!st.current?.sharedQuestion || !!st.cede || !hasSharedCandidate;
         bChange.disabled = helpsBlocked || st.debateActive || !st.answering || isFinal || !t.helps.change || !!st.current?.changed || !!st.cede;
         bSecond.disabled = helpsBlocked || st.debateActive || !st.answering || isFinal || !!st.cede || !!t.doubleArmed || !t.helps.second || !!st.current?.secondAttemptActive;
         bCede.disabled = helpsBlocked || st.debateActive || !st.answering || isFinal || isReto || !t.helps.cede || !!st.cede || !hasCedeCandidate;
@@ -5481,11 +5519,17 @@ function showWalkAway(prize, safeStep, safeMoney){
         bReroll.disabled = helpsBlocked || st.answering || st.rolling || st.ended || !t.helps.reroll || t.rerollArmed;
         bExtra.disabled = helpsBlocked || st.answering || st.rolling || st.ended || !t.helps.extraStep || t.doubleArmed || t.extraStepArmed;
         bExtraRoll.disabled = helpsBlocked || st.answering || st.rolling || st.ended || !t.helps.extraRoll || t.doubleArmed || t.extraRollArmed || !(t.extraRollTokens > 0);
+        bDifference.disabled = helpsBlocked || st.answering || st.rolling || st.ended || !t.helps.difference || !!t.differenceArmed || teams.length < 2;
+        bReturn.disabled = helpsBlocked || st.answering || st.rolling || st.ended || !t.helps.returnMove || !!t.returnMoveArmed || teams.length < 2;
         bDouble.classList.toggle("armed", !!t.doubleArmed);
         bReroll.classList.toggle("armed", !!t.rerollArmed);
         bExtraRoll.classList.toggle("armed", !!t.extraRollArmed);
+        bDifference.classList.toggle("armed", !!t.differenceArmed);
+        bReturn.classList.toggle("armed", !!t.returnMoveArmed);
         function cardHtml(icon, name, desc, state){ return '<div class="lifeCard"><div class="lifeIcon"><i class="' + icon + '"></i></div><div class="lifeBody"><div class="lifeName">' + name + '</div><div class="lifeDesc">' + desc + '</div><div class="lifeState">' + state + '</div></div></div>'; }
-        b50.innerHTML = cardHtml('fa-solid fa-circle-half-stroke','50/50','Elimina dos opciones incorrectas.','' + (helpsBlocked ? 'Bloqueada' : (t.helps.fifty && !st.current?.used5050 ? 'Disponible' : 'Usada')));
+        b50.innerHTML = cardHtml('fa-solid fa-circle-half-stroke','50/50','Quita la mitad de incorrectas: 4/5 opciones quita 2; 6 opciones quita 3.','' + (helpsBlocked ? 'Bloqueada' : (t.helps.fifty && !st.current?.used5050 ? 'Disponible' : 'Usada')));
+        bRemoveOne.innerHTML = cardHtml('fa-solid fa-eraser','Eliminar 1 opción','Elimina solo una respuesta incorrecta.','' + (helpsBlocked ? 'Bloqueada' : (t.helps.removeOne && !st.current?.usedRemoveOne ? 'Disponible' : 'Usada')));
+        bShared.innerHTML = cardHtml('fa-solid fa-handshake-angle','Pregunta compartida','Consulta a otro equipo; si aciertan, ambos ganan puntos y avanzan igual.','' + (helpsBlocked ? 'Bloqueada' : (sharedBlockedBySpecial ? 'Solo pregunta normal' : (!hasSharedCandidate ? 'Sin receptor' : (t.helps.shared && !st.current?.sharedQuestion ? 'Disponible' : 'Usada')))));
         bChange.innerHTML = cardHtml('fa-solid fa-rotate','Cambio de pregunta','Conserva el tiro y muestra otra pregunta.','' + (helpsBlocked ? 'Bloqueada' : (t.helps.change && !st.current?.changed ? 'Disponible' : 'Usada')));
         bSecond.innerHTML = cardHtml('fa-solid fa-repeat','Segundo intento','Si falla la primera, puede responder otra y avanza la mitad.','' + (helpsBlocked ? 'Bloqueada' : (t.helps.second && !st.current?.secondAttemptActive ? 'Disponible' : 'Usada')));
         bCede.innerHTML = cardHtml('fa-solid fa-share','Ceder pregunta','La misma pregunta pasa a otro equipo sin quitarle su turno normal.','' + (helpsBlocked ? 'Bloqueada' : (isReto ? 'Bloqueada en reto' : (!hasCedeCandidate ? 'Sin receptor' : (t.helps.cede ? 'Disponible' : 'Usada')))));
@@ -5499,8 +5543,12 @@ function showWalkAway(prize, safeStep, safeMoney){
         bReroll.innerHTML = cardHtml('fa-solid fa-arrows-rotate', (t.rerollArmed ? 'Repetir activo' : 'Repetir lanzamiento'),'','' + (helpsBlocked ? 'Bloqueada' : (t.rerollArmed ? 'Activa' : (t.helps.reroll ? 'Disponible' : 'Usada'))));
         bExtra.innerHTML = cardHtml('fa-solid fa-forward-step', (t.extraStepArmed ? 'Paso +2 activo' : 'Paso extra'),'','' + (helpsBlocked ? 'Bloqueada' : (t.extraStepArmed ? 'Activa' : (t.helps.extraStep ? 'Disponible' : 'Usada'))));
         bExtraRoll.innerHTML = cardHtml('fa-solid fa-dice-six', (t.extraRollArmed ? 'Tiro activo' : 'Tiro adicional'),'','' + (helpsBlocked ? 'Bloqueada' : (t.extraRollArmed ? 'Activa' : ((t.extraRollTokens || 0) > 0 ? 'Disponible +' + t.extraRollTokens : 'Bloqueada'))));
-        [b50,bChange,bSecond,bCede,bAddTime,bDebate,bWrongPlayer,bDouble,bSkip,bStealDie,bBlockHelp,bReroll,bExtra,bExtraRoll].forEach(function(btn){ btn.classList.remove('used','blocked'); });
+        bDifference.innerHTML = cardHtml('fa-solid fa-minus', (t.differenceArmed ? 'Diferencia activa' : 'Diferencia'),'Si aciertas, tu tiro se restará al próximo avance del equipo elegido.','' + (helpsBlocked ? 'Bloqueada' : (t.differenceArmed ? 'Activa' : (t.helps.difference ? 'Disponible' : 'Usada'))));
+        bReturn.innerHTML = cardHtml('fa-solid fa-rotate-left', (t.returnMoveArmed ? 'Devolver activo' : 'Devolver'),'Si acierta con el próximo tiro, el equipo elegido retrocede ese valor.','' + (helpsBlocked ? 'Bloqueada' : (t.returnMoveArmed ? 'Activa' : (t.helps.returnMove ? 'Disponible' : 'Usada'))));
+        [b50,bRemoveOne,bShared,bChange,bSecond,bCede,bAddTime,bDebate,bWrongPlayer,bDouble,bSkip,bStealDie,bBlockHelp,bReroll,bExtra,bExtraRoll,bDifference,bReturn].forEach(function(btn){ btn.classList.remove('used','blocked'); });
         if (!t.helps.fifty || st.current?.used5050) b50.classList.add('used');
+        if (!t.helps.removeOne || st.current?.usedRemoveOne) bRemoveOne.classList.add('used');
+        if (!t.helps.shared || st.current?.sharedQuestion) bShared.classList.add('used');
         if (!t.helps.change || st.current?.changed) bChange.classList.add('used');
         if (!t.helps.second || st.current?.secondAttemptActive) bSecond.classList.add('used');
         if (!t.helps.double && !t.doubleArmed) bDouble.classList.add('used');
@@ -5510,7 +5558,10 @@ function showWalkAway(prize, safeStep, safeMoney){
         if (!t.helps.reroll && !t.rerollArmed) bReroll.classList.add('used');
         if (!t.helps.extraStep && !t.extraStepArmed) bExtra.classList.add('used');
         if (!(t.extraRollTokens > 0) && !t.extraRollArmed) bExtraRoll.classList.add('blocked');
-        if (helpsBlocked) [b50,bChange,bSecond,bCede,bAddTime,bDebate,bWrongPlayer,bDouble,bSkip,bStealDie,bBlockHelp,bReroll,bExtra,bExtraRoll].forEach(function(btn){ btn.classList.add('blocked'); });
+        if (!t.helps.difference && !t.differenceArmed) bDifference.classList.add('used');
+        if (!t.helps.returnMove && !t.returnMoveArmed) bReturn.classList.add('used');
+        if (helpsBlocked) [b50,bRemoveOne,bShared,bChange,bSecond,bCede,bAddTime,bDebate,bWrongPlayer,bDouble,bSkip,bStealDie,bBlockHelp,bReroll,bExtra,bExtraRoll,bDifference,bReturn].forEach(function(btn){ btn.classList.add('blocked'); });
+        if (!hasSharedCandidate || sharedBlockedBySpecial) bShared.classList.add('blocked');
         if (isReto || !hasCedeCandidate) bCede.classList.add('blocked');
         if (!t.helps.cede) bCede.classList.add('used');
         if (!t.helps.addTime) bAddTime.classList.add('used');
@@ -5666,7 +5717,7 @@ function showWalkAway(prize, safeStep, safeMoney){
       function updateQuestionState(text){ $("qState").textContent = text; }
 
       function beginQuestionForTurn(q, msg){
-        st.current = { q:q, options:makeOptions(q), started:Date.now(), used5050:false, changed:false };
+        st.current = { q:q, options:makeOptions(q), started:Date.now(), used5050:false, usedRemoveOne:false, changed:false };
         chooseResponder(teams[st.turn]);
         markQuestionSeen(teams[st.turn], q);
         st.cede = null;
@@ -5701,7 +5752,7 @@ function showWalkAway(prize, safeStep, safeMoney){
           $("qText").textContent = "Este equipo ya recibió todas las preguntas disponibles para esta cantidad de opciones. Agregue más preguntas al banco o reduzca la duración de la partida.";
           return;
         }
-        let msg = teams[st.turn].doubleArmed ? "Doble o nada activo: debe acertar 2 preguntas; si falla alguna, retrocede x2" : "Responde para avanzar en el tablero";
+        let msg = st.pending <= 0 ? "Diferencia aplicada: responde bien para sumar puntos. No avanza porque el resultado quedó en 0." : (teams[st.turn].doubleArmed ? "Doble o nada activo: debe acertar 2 preguntas; si falla alguna, retrocede x2" : "Responde para avanzar en el tablero");
         if (st.targetType === "penalty") msg = "Si aciertas avanzas. Si caes en penalización tendrás una pregunta extra para conservar la posición.";
         if (st.targetType === "challenge") msg = "Si aciertas avanzas hasta RETO y luego debes responder 2 preguntas más.";
         if (st.targetType === "arrowF") msg = "Si aciertas avanzas y la flecha te dará +1 con animación adicional.";
@@ -5779,15 +5830,63 @@ function showWalkAway(prize, safeStep, safeMoney){
       function use5050(){
         const team = teams[st.turn];
         if (!st.answering || !st.current || !team.helps.fifty || st.current.used5050 || (team.blockHelpTurns || 0) > 0) return;
-        const wrongIdx = st.current.options.map(function(o, i){ return o.ok ? -1 : i; }).filter(function(i){ return i >= 0; });
-        shuffle(wrongIdx).slice(0, Math.min(2, wrongIdx.length)).forEach(function(i){ st.removedOptions[i] = true; });
+        const wrongIdx = st.current.options.map(function(o, i){ return o.ok ? -1 : i; }).filter(function(i){ return i >= 0 && !st.removedOptions[i]; });
+        const totalOptions = st.current.options.length;
+        const removeCount = totalOptions >= 6 ? 3 : 2;
+        shuffle(wrongIdx).slice(0, Math.min(removeCount, wrongIdx.length)).forEach(function(i){ st.removedOptions[i] = true; });
         team.helps.fifty = false;
         team.aidsUsed.fifty += 1;
-        logEvent(team.name + " usó 50/50.");
+        logEvent(team.name + " usó 50/50 y eliminó " + Math.min(removeCount, wrongIdx.length) + " opción(es) incorrecta(s).");
         st.current.used5050 = true;
         if (st.removedOptions[st.selected]) { st.selected = null; $("btnAnswer").disabled = true; }
-        updateQuestionState("Ayuda 50/50 aplicada");
+        updateQuestionState("Ayuda 50/50 aplicada: se quitó la mitad de opciones incorrectas disponibles.");
         renderOptions();
+        renderTurn();
+      }
+
+      function useRemoveOne(){
+        const team = teams[st.turn];
+        if (!st.answering || !st.current || !team.helps.removeOne || st.current.usedRemoveOne || (team.blockHelpTurns || 0) > 0 || st.debateActive) return;
+        const wrongIdx = st.current.options.map(function(o, i){ return o.ok ? -1 : i; }).filter(function(i){ return i >= 0 && !st.removedOptions[i]; });
+        if (!wrongIdx.length) { updateQuestionState("No hay opciones incorrectas disponibles para eliminar."); return; }
+        const removed = shuffle(wrongIdx)[0];
+        st.removedOptions[removed] = true;
+        team.helps.removeOne = false;
+        team.aidsUsed.removeOne += 1;
+        st.current.usedRemoveOne = true;
+        logEvent(team.name + " usó Eliminar 1 opción.");
+        if (st.removedOptions[st.selected]) { st.selected = null; $("btnAnswer").disabled = true; }
+        updateQuestionState("Eliminar 1 opción aplicado: se quitó una respuesta incorrecta.");
+        renderOptions();
+        renderTurn();
+      }
+
+      function chooseSharedReceiver(ownerIdx){
+        const candidates = teams.filter(function(tm){ return tm.id !== ownerIdx; });
+        if (!candidates.length) return null;
+        const lines = candidates.map(function(tm){ return (tm.id + 1) + ". " + tm.name; }).join("\\n");
+        const ans = window.prompt("Pregunta compartida: ¿a qué equipo deseas consultar?\\n\\n" + lines + "\\n\\nEscribe el número del equipo consultado.", String(candidates[0].id + 1));
+        if (ans == null) return null;
+        const n = parseInt(String(ans).replace(/[^0-9]/g, ""), 10);
+        const chosen = candidates.find(function(tm){ return tm.id === n - 1; });
+        if (!chosen) { alert("Selección no válida. Debes escoger un equipo diferente al equipo de turno."); return null; }
+        return chosen.id;
+      }
+
+      function useSharedQuestion(){
+        const team = teams[st.turn];
+        if (!st.answering || !st.current || st.current.final || st.cede || st.challenge || st.doubleChallenge || team.doubleArmed || st.current.landingPenalty || st.current.landingChallenge || st.current.doubleSecond || !team.helps.shared || st.current.sharedQuestion || (team.blockHelpTurns || 0) > 0 || st.debateActive) return;
+        const targetId = chooseSharedReceiver(st.turn);
+        if (targetId == null) return;
+        const target = teams[targetId];
+        if (!target) return;
+        if (!askConfirm("Pregunta compartida", team.name, "Podrá consultar a " + target.name + ". Si la respuesta es correcta, ambos equipos ganan puntos y avanzan la misma cantidad.")) return;
+        team.helps.shared = false;
+        team.aidsUsed.shared += 1;
+        st.current.sharedQuestion = { owner:team.id, target:target.id };
+        markQuestionSeen(target, st.current.q);
+        logEvent(team.name + " activó Pregunta compartida con " + target.name + ".");
+        updateQuestionState("Pregunta compartida activa: " + team.name + " consulta a " + target.name + ". Si aciertan, ambos ganan puntos y avanzan igual.");
         renderTurn();
       }
 
@@ -5901,7 +6000,7 @@ function showWalkAway(prize, safeStep, safeMoney){
         team.aidsUsed.change += 1;
         logEvent(team.name + " usó Cambio de pregunta.");
         st.current.changed = true;
-        st.current = { q:q, options:makeOptions(q), started:Date.now(), used5050:false, changed:true };
+        st.current = { q:q, options:makeOptions(q), started:Date.now(), used5050:false, usedRemoveOne:false, changed:true };
         markQuestionSeen(team, q);
         st.selected = null;
         st.removedOptions = {};
@@ -6038,6 +6137,131 @@ function showWalkAway(prize, safeStep, safeMoney){
       }
 
 
+      function chooseTargetTeam(ownerIdx, title, detailBuilder){
+        const candidates = teams.filter(function(tm){ return tm.id !== ownerIdx; });
+        if (!candidates.length) return null;
+        const lines = candidates.map(function(tm){ return (tm.id + 1) + ". " + tm.name + (detailBuilder ? " " + detailBuilder(tm) : ""); }).join("\\n");
+        const ans = window.prompt(title + "\\n\\n" + lines + "\\n\\nEscribe el número del equipo.", String(candidates[0].id + 1));
+        if (ans == null) return null;
+        const n = parseInt(String(ans).replace(/[^0-9]/g, ""), 10);
+        const chosen = candidates.find(function(tm){ return tm.id === n - 1; });
+        if (!chosen) { alert("Selección no válida. Debes escoger un equipo distinto al tuyo."); return null; }
+        return chosen.id;
+      }
+
+      function armDifference(){
+        const team = teams[st.turn];
+        ensureTeamHelpDefaults(team);
+        if (st.answering || st.rolling || st.ended || !team.helps.difference || team.differenceArmed || (team.blockHelpTurns || 0) > 0) return;
+        const targetIdx = chooseTargetTeam(team.id, "¿A qué equipo quieres aplicar Diferencia?", function(tm){ return "(diferencias pendientes: " + ((tm.differenceEffects || []).length) + ")"; });
+        if (targetIdx == null) return;
+        const target = teams[targetIdx];
+        if (!window.confirm("¿Confirmas usar Diferencia? Esta ayuda se consume para " + team.name + ".\\n\\nSi " + team.name + " responde bien, el valor de su lanzamiento se restará al próximo avance de " + target.name + ". Si " + team.name + " responde mal, no se aplica la resta.")) return;
+        team.helps.difference = false;
+        team.aidsUsed.difference += 1;
+        team.differenceArmed = { target: targetIdx };
+        logEvent(team.name + " activó Diferencia contra " + target.name + ". Se aplicará solo si responde bien la pregunta de su próximo lanzamiento.");
+        updateQuestionState("Diferencia activada contra " + target.name + ": si respondes bien, tu próximo tiro se restará a ese equipo.");
+        renderTurn();
+      }
+
+      function armReturnMove(){
+        const team = teams[st.turn];
+        ensureTeamHelpDefaults(team);
+        if (st.answering || st.rolling || st.ended || !team.helps.returnMove || team.returnMoveArmed || (team.blockHelpTurns || 0) > 0) return;
+        const targetIdx = chooseTargetTeam(team.id, "¿A qué equipo quieres aplicar Devolver?", function(tm){ return "(posición: " + (tm.pos || 0) + ")"; });
+        if (targetIdx == null) return;
+        const target = teams[targetIdx];
+        if (!window.confirm("¿Confirmas usar Devolver? Esta ayuda se consume para " + team.name + ".\\n\\nSi " + team.name + " responde bien en su próximo tiro, avanzará normalmente y " + target.name + " retrocederá ese mismo valor. Si responde mal, no se devuelve a nadie.")) return;
+        team.helps.returnMove = false;
+        team.aidsUsed.returnMove += 1;
+        team.returnMoveArmed = { target: targetIdx };
+        logEvent(team.name + " activó Devolver contra " + target.name + ".");
+        updateQuestionState("Devolver activado contra " + target.name + ": si acierta el próximo tiro, ese equipo retrocede.");
+        renderTurn();
+      }
+
+      function captureArmedDifferenceRollValue(team){
+        ensureTeamHelpDefaults(team);
+        if (!team.differenceArmed) return;
+        const amount = Math.max(0, Number(st.rollOriginal || st.pending || 0));
+        team.differenceArmed.amount = amount;
+        const target = teams[team.differenceArmed.target];
+        if (target) {
+          updateQuestionState("Diferencia preparada: si " + team.name + " responde bien, " + target.name + " tendrá -" + amount + " en su próximo tiro.");
+          logEvent(team.name + " preparó Diferencia de " + amount + " contra " + target.name + ". Queda pendiente de acertar la pregunta.");
+        }
+      }
+
+      function commitArmedDifferenceAfterCorrect(team){
+        ensureTeamHelpDefaults(team);
+        const effect = team.differenceArmed;
+        if (!effect) return null;
+        const target = teams[effect.target];
+        const amount = Math.max(0, Number(effect.amount || st.rollOriginal || st.pending || 0));
+        team.differenceArmed = null;
+        if (!target || amount <= 0) return null;
+        ensureTeamHelpDefaults(target);
+        target.differenceEffects = target.differenceEffects || [];
+        target.differenceEffects.push({ source: team.name, amount: amount });
+        logEvent(team.name + " respondió bien y dejó Diferencia de " + amount + " contra " + target.name + ".");
+        return { target:target, amount:amount, html:'<b>Diferencia:</b> ' + esc(team.name) + ' respondió bien. A ' + esc(target.name) + ' se le restarán <b>' + amount + '</b> casillas en su próximo tiro. ' };
+      }
+
+      function clearArmedDifferenceAfterWrong(team){
+        ensureTeamHelpDefaults(team);
+        const effect = team.differenceArmed;
+        if (!effect) return;
+        const target = teams[effect.target];
+        team.differenceArmed = null;
+        logEvent(team.name + " falló con Diferencia activa; no se aplica resta" + (target ? " contra " + target.name : "") + ".");
+        if (target) updateQuestionState("Diferencia no aplicada: " + team.name + " falló la pregunta. " + target.name + " no recibe resta.");
+      }
+
+      function applyPendingDifferenceBeforeQuestion(team){
+        ensureTeamHelpDefaults(team);
+        const effects = (team.differenceEffects || []).filter(function(e){ return e && Number(e.amount || 0) > 0; });
+        if (!effects.length) return { applied:false, zero:false, html:"", adjusted:Math.max(0, Number(st.pending || 0)) };
+        team.differenceEffects = [];
+        const original = Math.max(0, Number(st.pending || 0));
+        const totalSub = effects.reduce(function(acc, e){ return acc + Math.max(0, Number(e.amount || 0)); }, 0);
+        const adjusted = Math.max(0, original - totalSub);
+        st.pending = adjusted;
+        if ($("diceSum")) $("diceSum").textContent = String(adjusted);
+        if ($("qDiceSum")) $("qDiceSum").textContent = String(adjusted);
+        const sources = effects.map(function(e){ return "<b>" + esc(e.source || "Otro equipo") + "</b> le restó <b>" + Math.max(0, Number(e.amount || 0)) + "</b> por usar la ayuda Diferencia"; }).join("<br>");
+        const bigResult = "<div style='margin:16px auto 10px;padding:16px 18px;border-radius:22px;background:#f8fafc;border:1px solid #e2e8f0;font-weight:1000;font-size:clamp(38px,7vw,86px);line-height:1;color:#0f172a;'>" + original + " - " + totalSub + " = " + adjusted + "</div>";
+        const html = "<b>Diferencia aplicada a " + esc(team.name) + ".</b><br>" + sources + "." + bigResult + (adjusted <= 0 ? "<b>No avanza.</b>" : "Si responde bien, solo avanza <b>" + adjusted + "</b> casillas.");
+        logEvent(team.name + " recibió Diferencia: " + original + " - " + totalSub + " = " + adjusted + ".");
+        return { applied:true, zero: adjusted <= 0, html: html, adjusted:adjusted };
+      }
+
+      function continueAfterRollResult(team){
+        captureArmedDifferenceRollValue(team);
+        const diff = applyPendingDifferenceBeforeQuestion(team);
+        renderTurn();
+        if (!diff.applied) { askQuestion(); return; }
+        showFeedback(null, diff.html, "fa-solid fa-minus", "Diferencia");
+        setTimeout(function(){ closeFeedback(); askQuestion(); }, diff.zero ? 3400 : 3000);
+      }
+
+
+      function applyReturnMoveAfterCorrect(team, done){
+        ensureTeamHelpDefaults(team);
+        const effect = team.returnMoveArmed;
+        team.returnMoveArmed = null;
+        if (!effect) { if (done) done(); return; }
+        const target = teams[effect.target];
+        const amount = Math.max(0, Number(effect.amount || st.pending || 0));
+        if (!target || amount <= 0) { if (done) done(); return; }
+        logEvent(team.name + " aplicó Devolver contra " + target.name + " por " + amount + " casillas.");
+        showFeedback(null, "<b>Devolver aplicado.</b><br>" + esc(team.name) + " respondió bien. " + esc(target.name) + " se devuelve <b>" + amount + "</b> casillas.", "fa-solid fa-rotate-left", "Devolver");
+        setTimeout(function(){
+          closeFeedback();
+          animateMovement(target, -amount, function(){ if (done) done(); }, 2400);
+        }, 1200);
+      }
+
       function armStealDie(){
         const team = teams[st.turn];
         if (st.answering || st.rolling || st.ended || !team.helps.stealDie || (team.blockHelpTurns || 0) > 0) return;
@@ -6107,6 +6331,7 @@ function showWalkAway(prize, safeStep, safeMoney){
         st.current = null;
         st.selected = null;
         st.pending = 0;
+        st.rollOriginal = 0;
         st.dice = [1,1];
         clearInterval(st.timer);
         $("timeLeft").textContent = "0";
@@ -6315,7 +6540,7 @@ function showWalkAway(prize, safeStep, safeMoney){
             if (st.challenge.step < 2) {
               st.challenge.step = 2;
               const q2 = st.challenge.qs[1];
-              st.current = { q:q2, options:makeOptions(q2), started:st.current.started, used5050:false, changed:false, landingChallenge:true };
+              st.current = { q:q2, options:makeOptions(q2), started:st.current.started, used5050:false, usedRemoveOne:false, changed:false, landingChallenge:true };
               markQuestionSeen(team, q2);
               st.selected = null;
               st.removedOptions = {};
@@ -6373,6 +6598,9 @@ function showWalkAway(prize, safeStep, safeMoney){
 
         if (ok){
           const scoreInfo = addNormalCorrectScore();
+          const sharedInfo = st.current && st.current.sharedQuestion && st.current.sharedQuestion.owner === team.id ? st.current.sharedQuestion : null;
+          let sharedPartner = sharedInfo ? teams[sharedInfo.target] : null;
+          let sharedMsg = "";
           const wasDouble = team.doubleArmed;
           const wasSecond = !!st.current.secondAttemptUsed;
 
@@ -6385,7 +6613,7 @@ function showWalkAway(prize, safeStep, safeMoney){
               return;
             }
             st.doubleChallenge = { teamId:team.id, firstScore:scoreInfo.total };
-            st.current = { q:q2, options:makeOptions(q2), started:Date.now(), used5050:false, changed:false, doubleSecond:true };
+            st.current = { q:q2, options:makeOptions(q2), started:Date.now(), used5050:false, usedRemoveOne:false, changed:false, doubleSecond:true };
             markQuestionSeen(team, q2);
             st.selected = null;
             st.removedOptions = {};
@@ -6406,20 +6634,47 @@ function showWalkAway(prize, safeStep, safeMoney){
           const doubleCompleted = !!st.doubleChallenge;
           const usedExtra = !!team.extraStepArmed && !doubleCompleted;
           if (usedExtra) move += 2;
+          if (sharedPartner) {
+            sharedPartner.correct += 1;
+            sharedPartner.streak += 1;
+            sharedPartner.score += scoreInfo.total;
+            sharedMsg = '<b>Pregunta compartida:</b> ' + esc(sharedPartner.name) + ' también gana <b>+' + scoreInfo.total + ' puntos</b> y avanza <b>' + move + '</b> casillas. ';
+            logEvent(team.name + " acertó Pregunta compartida con " + sharedPartner.name + "; ambos ganan puntos y avanzan " + move + " casillas.");
+          }
+          const diffResult = commitArmedDifferenceAfterCorrect(team);
+          const differenceMsg = diffResult ? diffResult.html : "";
           team.doubleArmed = false;
           team.extraStepArmed = false;
           st.doubleChallenge = null;
           closeQuestionOverlay();
-          showFeedback(true, (doubleCompleted ? '<b>Doble o nada superado:</b> acertó 2 preguntas. ' : '') + (wasSecond ? '<b>Segundo intento:</b> ' : '') + (usedExtra ? '<b>Paso extra:</b> suma +2 casillas. ' : '') + 'Ahora la ficha avanzará <b>' + move + '</b> casillas.');
+          const scoreMsg = 'Puntaje de esta pregunta: +100 acierto, +' + scoreInfo.speedBonus + ' rapidez, +' + scoreInfo.streakBonus + ' racha. Total: <b>+' + scoreInfo.total + '</b>.';
+          if (move <= 0) {
+            showAndEnd(true, sharedMsg + differenceMsg + (doubleCompleted ? '<b>Doble o nada superado:</b> acertó 2 preguntas. ' : '') + (wasSecond ? '<b>Segundo intento:</b> ' : '') + '<b>No avanza.</b> La Diferencia dejó el avance en <b>0</b>. ' + scoreMsg, 2800);
+            return;
+          }
+          showFeedback(true, sharedMsg + differenceMsg + (doubleCompleted ? '<b>Doble o nada superado:</b> acertó 2 preguntas. ' : '') + (wasSecond ? '<b>Segundo intento:</b> ' : '') + (usedExtra ? '<b>Paso extra:</b> suma +2 casillas. ' : '') + 'Ahora la ficha avanzará <b>' + move + '</b> casillas.');
           setTimeout(function(){ closeFeedback(); animateMovement(team, move, function(){
-            const msg = (doubleCompleted ? '<b>Doble o nada:</b> avanzó el doble por 2 aciertos. ' : '') + (usedExtra ? '<b>Paso extra:</b> agregó +2 casillas. ' : '') + 'Avanza <b>' + move + '</b> espacios. Puntaje de esta pregunta: +100 acierto, +' + scoreInfo.speedBonus + ' rapidez, +' + scoreInfo.streakBonus + ' racha. Total: <b>+' + scoreInfo.total + '</b>.';
-            if (needsFinalChallenge(team)) { st.resolving = false; startFinalChallenge(team); return; }
-            handleLanding(team, move, msg);
+            const msg = sharedMsg + differenceMsg + (doubleCompleted ? '<b>Doble o nada:</b> avanzó el doble por 2 aciertos. ' : '') + (usedExtra ? '<b>Paso extra:</b> agregó +2 casillas. ' : '') + 'Avanza <b>' + move + '</b> espacios. ' + scoreMsg;
+            const finishOwnerTurn = function(){
+              applyReturnMoveAfterCorrect(team, function(){
+                if (needsFinalChallenge(team)) { st.resolving = false; startFinalChallenge(team); return; }
+                handleLanding(team, move, msg);
+              });
+            };
+            if (sharedPartner && move > 0) {
+              showFeedback(null, '<b>Pregunta compartida:</b><br>' + esc(sharedPartner.name) + ' también avanza <b>' + move + '</b> casillas.', 'fa-solid fa-handshake-angle', 'Pregunta compartida');
+              setTimeout(function(){ closeFeedback(); animateMovement(sharedPartner, move, finishOwnerTurn, 2400); }, 900);
+            } else {
+              finishOwnerTurn();
+            }
           }, 3000); }, 1200);
         } else {
           team.streak = 0;
           team.incorrect += 1;
           const wasDouble = team.doubleArmed || !!st.doubleChallenge;
+          if (team.returnMoveArmed) { logEvent(team.name + " falló con Devolver activo; no se devuelve a ningún equipo."); team.returnMoveArmed = null; }
+          clearArmedDifferenceAfterWrong(team);
+          if (st.current && st.current.sharedQuestion) { logEvent(team.name + " falló Pregunta compartida; el equipo consultado no gana puntos."); }
           const back = wasDouble ? st.pending * 2 : 0;
           team.doubleArmed = false;
           team.extraStepArmed = false;
@@ -6445,7 +6700,7 @@ function showWalkAway(prize, safeStep, safeMoney){
         st.answering = true;
         st.selected = null;
         st.removedOptions = {};
-        st.current = { q:q, options:makeOptions(q), started:Date.now(), final:true };
+        st.current = { q:q, options:makeOptions(q), started:Date.now(), used5050:false, usedRemoveOne:false, changed:false, final:true };
         markQuestionSeen(team, q);
         st.remaining = timePerQuestion;
         setQuestionTheme(team);
@@ -6504,6 +6759,8 @@ function showWalkAway(prize, safeStep, safeMoney){
               bloqueos_de_ayuda_pendientes: t.blockHelpTurns || 0,
               ayudas_usadas: {
                 "50/50": t.aidsUsed.fifty,
+                "Eliminar 1 opción": t.aidsUsed.removeOne || 0,
+                "Pregunta compartida": t.aidsUsed.shared || 0,
                 "Cambio de pregunta": t.aidsUsed.change,
                 "Segundo intento": t.aidsUsed.second,
                 "Ceder pregunta": t.aidsUsed.cede,
@@ -6799,6 +7056,7 @@ function showWalkAway(prize, safeStep, safeMoney){
           clearInterval(tick);
           st.dice = [final1, final2];
           st.pending = final1 + final2;
+          st.rollOriginal = final1 + final2;
           d1.textContent = DIE[final1];
           d2.textContent = oneDie ? "—" : DIE[final2];
           d1.classList.remove("rolling");
@@ -6830,7 +7088,7 @@ function showWalkAway(prize, safeStep, safeMoney){
             } else {
               if (team && team.rerollArmed) team.rerollArmed = false;
               if (!opts.noUnlockExtraRoll) unlockExtraRollIfDoubleSix(team, final1, final2);
-              askQuestion();
+              continueAfterRollResult(team);
             }
           }, 420);
         }, 2400 + Math.floor(Math.random() * 650));
@@ -6863,12 +7121,13 @@ function showWalkAway(prize, safeStep, safeMoney){
                 st.extraRollMode = false;
                 st.dice = [b1, b2];
                 st.pending = total;
+                st.rollOriginal = total;
                 if ($("diceSum")) $("diceSum").textContent = String(total);
                 if ($("qDiceSum")) $("qDiceSum").textContent = String(total);
                 logEvent(team.name + " Tiro adicional 2: " + b1 + " + " + b2 + " = " + sum2 + ". Total acumulado: " + total + ".");
                 updateQuestionState("Tiro adicional completado: total acumulado " + total + ". Responde para avanzar.");
                 renderTurn();
-                askQuestion();
+                continueAfterRollResult(team);
               }});
             }, 650);
           }});
@@ -6896,6 +7155,8 @@ function showWalkAway(prize, safeStep, safeMoney){
       $("btnRoll").addEventListener("click", roll);
       $("btnAnswer").addEventListener("click", function(){ submitAnswer(false); });
       $("life5050").addEventListener("click", use5050);
+      $("lifeRemoveOne").addEventListener("click", useRemoveOne);
+      $("lifeShared").addEventListener("click", useSharedQuestion);
       $("lifeChange").addEventListener("click", useChangeQuestion);
       $("lifeCede").addEventListener("click", useCedeQuestion);
       $("lifeAddTime").addEventListener("click", useAddTime);
@@ -6909,6 +7170,8 @@ function showWalkAway(prize, safeStep, safeMoney){
       $("lifeReroll").addEventListener("click", armReroll);
       $("lifeExtraStep").addEventListener("click", armExtraStep);
       $("lifeExtraRoll").addEventListener("click", armExtraRoll);
+      $("lifeDifference").addEventListener("click", armDifference);
+      $("lifeReturn").addEventListener("click", armReturnMove);
       $("btnRestart").addEventListener("click", function(){ clearSavedGame(); location.reload(); });
       if ($("btnResetSaved")) $("btnResetSaved").addEventListener("click", function(){ if (window.confirm("¿Reiniciar la partida guardada y comenzar de nuevo?")) { clearSavedGame(); location.reload(); } });
       $("btnDownloadSummary").addEventListener("click", downloadSummary);
