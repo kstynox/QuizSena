@@ -208,7 +208,7 @@
     @media (max-width:900px){ .overlayLifelines{ grid-template-columns:repeat(3,minmax(0,1fr)) !important; } .questionPanel{ overflow:auto !important; } }
 
 
-    /* V88: mostrar todos los equipos configurados (4 a 8) en el marcador superior */
+    /* V96: mostrar todos los equipos configurados (3 a 8) en el marcador superior */
     .topTeams{ grid-template-columns:repeat(var(--teamCols,4), minmax(118px,1fr)) !important; overflow:visible !important; }
     .topTeam{ grid-template-columns:44px minmax(0,1fr) auto !important; padding:8px 10px !important; gap:8px !important; min-width:0 !important; }
     .topTeamIcon{ width:40px !important; height:40px !important; border-radius:14px !important; font-size:20px !important; }
@@ -798,8 +798,8 @@ footer{display:none !important;}
           </div>
           <div id="parquesTeamsWrap" class="hidden">
             <div class="text-[11px] font-black uppercase tracking-widest text-slate-400">Equipos Parqués</div>
-            <input id="cfgParquesTeams" type="number" min="4" max="8" value="4" class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-black text-sm focus:outline-none focus:ring-2 focus:ring-sky-200" />
-            <div class="mt-1 text-[11px] text-slate-500 font-bold">De 4 a 8 equipos. Cada equipo usa 1 ficha.</div>
+            <input id="cfgParquesTeams" type="number" min="3" max="8" value="4" class="mt-2 w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white font-black text-sm focus:outline-none focus:ring-2 focus:ring-sky-200" />
+            <div class="mt-1 text-[11px] text-slate-500 font-bold">De 3 a 8 equipos. Cada equipo usa 1 ficha.</div>
           </div>
           <div id="parquesTimeWrap" class="hidden">
             <div class="text-[11px] font-black uppercase tracking-widest text-slate-400">Tiempo por pregunta</div>
@@ -1268,7 +1268,7 @@ footer{display:none !important;}
           desc.textContent = "Modo Millonario: 15 preguntas, 4 opciones, única respuesta. Comodines digitales.";
           desc.className = "text-center text-xs font-bold text-orange-600 mt-2 uppercase tracking-widest";
         } else if (mode === "parques") {
-          desc.textContent = "Modo Parqués: 4 a 8 equipos, tablero, 2 dados, preguntas por turno y puntaje por rapidez/racha.";
+          desc.textContent = "Modo Parqués: 3 a 8 equipos, tablero, 2 dados, preguntas por turno y puntaje por rapidez/racha.";
           desc.className = "text-center text-xs font-bold text-sky-700 mt-2 uppercase tracking-widest";
         } else {
           desc.textContent = "Modo Evaluación: calificación y seguridad.";
@@ -1353,7 +1353,7 @@ footer{display:none !important;}
         if (dom.cfgLockResults) dom.cfgLockResults.checked = false;
         if (dom.pinRow) { dom.pinRow.classList.add("hidden"); dom.pinRow.classList.remove("flex"); }
         if (dom.cfgPin) dom.cfgPin.value = "";
-        if (dom.cfgParquesTeams) dom.cfgParquesTeams.value = String(clampInt(dom.cfgParquesTeams.value || state.config.parquesTeams, 4, 8, 4));
+        if (dom.cfgParquesTeams) dom.cfgParquesTeams.value = String(clampInt(dom.cfgParquesTeams.value || state.config.parquesTeams, 3, 8, 4));
         if (dom.cfgParquesTime) dom.cfgParquesTime.value = String(clampInt(dom.cfgParquesTime.value || state.config.parquesTimePerQuestion, 10, 180, 30));
         if (dom.cfgParquesBoardSize) {
           const __bs = parseInt(dom.cfgParquesBoardSize.value || state.config.parquesBoardSize || 96, 10);
@@ -1583,7 +1583,7 @@ dom.cfgTheme.value = state.config.theme;
       const maxCount = Math.max(1, state.questions.length || 1);
       state.config.count = clampInt(dom.cfgCount.value, 1, maxCount, Math.min(10, maxCount));
       state.config.optionsCount = clampInt(dom.cfgOptions.value, 2, 10, 4);
-      state.config.parquesTeams = clampInt(dom.cfgParquesTeams ? dom.cfgParquesTeams.value : state.config.parquesTeams, 4, 8, 4);
+      state.config.parquesTeams = clampInt(dom.cfgParquesTeams ? dom.cfgParquesTeams.value : state.config.parquesTeams, 3, 8, 4);
       state.config.parquesTimePerQuestion = clampInt(dom.cfgParquesTime ? dom.cfgParquesTime.value : state.config.parquesTimePerQuestion, 10, 180, 30);
       const __parqBoardSize = parseInt(dom.cfgParquesBoardSize ? dom.cfgParquesBoardSize.value : state.config.parquesBoardSize, 10);
       state.config.parquesBoardSize = [48,72,96,120].includes(__parqBoardSize) ? __parqBoardSize : 96;
@@ -2059,7 +2059,7 @@ NOTA: Reemplaza {TEMA} y {N_PREGUNTAS} antes de usar este prompt.
           count,
           mode,
           optionsCount: (mode === "millionaire") ? 4 : state.config.optionsCount,
-          parquesTeams: clampInt(state.config.parquesTeams, 4, 8, 4),
+          parquesTeams: clampInt(state.config.parquesTeams, 3, 8, 4),
           parquesTimePerQuestion: clampInt(state.config.parquesTimePerQuestion, 10, 180, 30),
           parquesBoardSize: [48,72,96,120].includes(parseInt(state.config.parquesBoardSize, 10)) ? parseInt(state.config.parquesBoardSize, 10) : 96,
           isPractice,
@@ -4071,7 +4071,7 @@ function showWalkAway(prize, safeStep, safeMoney){
         title: cfg.title || "PARQUÉS DE PREGUNTAS",
         mode: "parques",
         optionsCount: clampInt(cfg.optionsCount, 4, 6, 4),
-        parquesTeams: clampInt(cfg.parquesTeams, 4, 8, 4),
+        parquesTeams: clampInt(cfg.parquesTeams, 3, 8, 4),
         parquesTimePerQuestion: clampInt(cfg.parquesTimePerQuestion, 10, 180, 30),
         parquesBoardSize: [48,72,96,120].includes(parseInt(cfg.parquesBoardSize, 10)) ? parseInt(cfg.parquesBoardSize, 10) : 96
       }).replace(/</g, "\\u003c");
@@ -5061,7 +5061,7 @@ function showWalkAway(prize, safeStep, safeMoney){
       ];
       function allowedBoardSize(v){ const n = parseInt(v, 10); return [48,72,96,120].includes(n) ? n : 96; }
       const boardSize = allowedBoardSize(CONFIG.parquesBoardSize || 96);
-      const teamCount = Math.max(4, Math.min(8, parseInt(CONFIG.parquesTeams || 4, 10) || 4));
+      const teamCount = Math.max(3, Math.min(8, parseInt(CONFIG.parquesTeams || 4, 10) || 4));
       const optionsCount = Math.max(4, Math.min(6, parseInt(CONFIG.optionsCount || 4, 10) || 4));
       const timePerQuestion = Math.max(10, Math.min(180, parseInt(CONFIG.parquesTimePerQuestion || 30, 10) || 30));
       const $ = function(id){ return document.getElementById(id); };
@@ -5187,7 +5187,7 @@ function showWalkAway(prize, safeStep, safeMoney){
       function applyLandingEffect(team){
         const typ = cellType(team.pos);
         recordSpecial(team, typ);
-        if (typ === "safe") return " Casilla SEGURO activada: no retrocede ante penalizaciones.";
+        if (typ === "safe") return " Casilla SEGURO activada: queda protegido de ayudas ofensivas y daños de otros equipos mientras permanezca aquí.";
         if (typ === "arrowF" && team.pos < boardSize) { team.pos = Math.min(boardSize, team.pos + 1); return " Flecha: avanza 1 casilla adicional."; }
         if (typ === "arrowB" && team.pos > 0) { const r = safeBack(team, 1); return r.moved ? " Flecha: retrocede 1 casilla." : " Flecha de retroceso bloqueada por casilla SEGURO."; }
         return "";
@@ -6108,21 +6108,53 @@ function showWalkAway(prize, safeStep, safeMoney){
         renderTurn();
       }
 
-      function chooseSkipTarget(ownerIdx){
+      function isTeamProtectedBySafe(team){
+        return !!team && isSafePos(team.pos);
+      }
+
+      function showSafeProtectionAlert(target, actionLabel, autoCloseMs){
+        if (!target) return;
+        const action = actionLabel || "esta acción";
+        logEvent(target.name + " bloqueó " + action + " por estar en casilla SEGURO.");
+        showFeedback(null,
+          "<b>" + esc(target.name) + " está en Seguro.</b><br>No es posible aplicar <b>(" + esc(action) + ")</b>.<br>Seleccione otro equipo que no esté en casilla Seguro.",
+          "fa-solid fa-shield-halved",
+          "Equipo protegido"
+        );
+        const delay = Math.max(0, Number(autoCloseMs == null ? 3200 : autoCloseMs));
+        if (delay > 0) setTimeout(function(){ closeFeedback(); }, delay);
+      }
+
+      function blockDamageIfSafe(target, actionLabel){
+        if (!isTeamProtectedBySafe(target)) return false;
+        showSafeProtectionAlert(target, actionLabel);
+        return true;
+      }
+
+      function chooseSkipTarget(ownerIdx, promptTitle, actionLabel){
         const candidates = teams.filter(function(tm){ return tm.id !== ownerIdx; });
-        const lines = candidates.map(function(tm){ return (tm.id + 1) + ". " + tm.name + " (turnos pendientes: " + (tm.skipTurns || 0) + ")"; }).join("\\n");
-        const ans = window.prompt("¿A qué equipo le quieres hacer perder turno?\\n\\n" + lines + "\\n\\nEscribe el número del equipo.", String(candidates[0].id + 1));
+        const available = candidates.filter(function(tm){ return !isTeamProtectedBySafe(tm); });
+        if (!available.length) {
+          showFeedback(null, "<b>No hay equipos disponibles.</b><br>Todos los demás equipos están protegidos por una casilla Seguro.", "fa-solid fa-shield-halved", "Equipos protegidos");
+          setTimeout(function(){ closeFeedback(); }, 3200);
+          return null;
+        }
+        const lines = candidates.map(function(tm){
+          return (tm.id + 1) + ". " + tm.name + " (turnos pendientes: " + (tm.skipTurns || 0) + ")" + (isTeamProtectedBySafe(tm) ? " [SEGURO]" : "");
+        }).join("\\n");
+        const ans = window.prompt((promptTitle || "Selecciona un equipo") + "\\n\\n" + lines + "\\n\\nEscribe el número del equipo.", String(available[0].id + 1));
         if (ans == null) return null;
         const n = parseInt(String(ans).replace(/[^0-9]/g, ""), 10);
         const chosen = candidates.find(function(tm){ return tm.id === n - 1; });
         if (!chosen) { alert("Selección no válida. Debes escoger un equipo distinto al tuyo."); return null; }
+        if (blockDamageIfSafe(chosen, actionLabel || "esta acción")) return null;
         return chosen.id;
       }
 
       function armSkipTurn(){
         const team = teams[st.turn];
         if (st.answering || st.rolling || st.ended || !team.helps.skip || (team.blockHelpTurns || 0) > 0) return;
-        const targetIdx = chooseSkipTarget(team.id);
+        const targetIdx = chooseSkipTarget(team.id, "¿A qué equipo le quieres hacer perder turno?", "Perder turno");
         if (targetIdx == null) return;
         const target = teams[targetIdx];
         if (!window.confirm("¿Confirmas usar Perder turno? Esta ayuda se consume para " + team.name + ".\\n\\n" + target.name + " perderá 1 turno. Si ya tenía turnos pendientes, se acumula.")) return;
@@ -6137,15 +6169,23 @@ function showWalkAway(prize, safeStep, safeMoney){
       }
 
 
-      function chooseTargetTeam(ownerIdx, title, detailBuilder){
+      function chooseTargetTeam(ownerIdx, title, detailBuilder, actionLabel){
         const candidates = teams.filter(function(tm){ return tm.id !== ownerIdx; });
-        if (!candidates.length) return null;
-        const lines = candidates.map(function(tm){ return (tm.id + 1) + ". " + tm.name + (detailBuilder ? " " + detailBuilder(tm) : ""); }).join("\\n");
-        const ans = window.prompt(title + "\\n\\n" + lines + "\\n\\nEscribe el número del equipo.", String(candidates[0].id + 1));
+        const available = candidates.filter(function(tm){ return !isTeamProtectedBySafe(tm); });
+        if (!available.length) {
+          showFeedback(null, "<b>No hay equipos disponibles.</b><br>Todos los demás equipos están protegidos por una casilla Seguro.", "fa-solid fa-shield-halved", "Equipos protegidos");
+          setTimeout(function(){ closeFeedback(); }, 3200);
+          return null;
+        }
+        const lines = candidates.map(function(tm){
+          return (tm.id + 1) + ". " + tm.name + (detailBuilder ? " " + detailBuilder(tm) : "") + (isTeamProtectedBySafe(tm) ? " [SEGURO]" : "");
+        }).join("\\n");
+        const ans = window.prompt(title + "\\n\\n" + lines + "\\n\\nEscribe el número del equipo.", String(available[0].id + 1));
         if (ans == null) return null;
         const n = parseInt(String(ans).replace(/[^0-9]/g, ""), 10);
         const chosen = candidates.find(function(tm){ return tm.id === n - 1; });
         if (!chosen) { alert("Selección no válida. Debes escoger un equipo distinto al tuyo."); return null; }
+        if (blockDamageIfSafe(chosen, actionLabel || "esta acción")) return null;
         return chosen.id;
       }
 
@@ -6153,7 +6193,7 @@ function showWalkAway(prize, safeStep, safeMoney){
         const team = teams[st.turn];
         ensureTeamHelpDefaults(team);
         if (st.answering || st.rolling || st.ended || !team.helps.difference || team.differenceArmed || (team.blockHelpTurns || 0) > 0) return;
-        const targetIdx = chooseTargetTeam(team.id, "¿A qué equipo quieres aplicar Diferencia?", function(tm){ return "(diferencias pendientes: " + ((tm.differenceEffects || []).length) + ")"; });
+        const targetIdx = chooseTargetTeam(team.id, "¿A qué equipo quieres aplicar Diferencia?", function(tm){ return "(diferencias pendientes: " + ((tm.differenceEffects || []).length) + ")"; }, "Diferencia");
         if (targetIdx == null) return;
         const target = teams[targetIdx];
         if (!window.confirm("¿Confirmas usar Diferencia? Esta ayuda se consume para " + team.name + ".\\n\\nSi " + team.name + " responde bien, el valor de su lanzamiento se restará al próximo avance de " + target.name + ". Si " + team.name + " responde mal, no se aplica la resta.")) return;
@@ -6169,7 +6209,7 @@ function showWalkAway(prize, safeStep, safeMoney){
         const team = teams[st.turn];
         ensureTeamHelpDefaults(team);
         if (st.answering || st.rolling || st.ended || !team.helps.returnMove || team.returnMoveArmed || (team.blockHelpTurns || 0) > 0) return;
-        const targetIdx = chooseTargetTeam(team.id, "¿A qué equipo quieres aplicar Devolver?", function(tm){ return "(posición: " + (tm.pos || 0) + ")"; });
+        const targetIdx = chooseTargetTeam(team.id, "¿A qué equipo quieres aplicar Devolver?", function(tm){ return "(posición: " + (tm.pos || 0) + ")"; }, "Devolver");
         if (targetIdx == null) return;
         const target = teams[targetIdx];
         if (!window.confirm("¿Confirmas usar Devolver? Esta ayuda se consume para " + team.name + ".\\n\\nSi " + team.name + " responde bien en su próximo tiro, avanzará normalmente y " + target.name + " retrocederá ese mismo valor. Si responde mal, no se devuelve a nadie.")) return;
@@ -6201,6 +6241,10 @@ function showWalkAway(prize, safeStep, safeMoney){
         const amount = Math.max(0, Number(effect.amount || st.rollOriginal || st.pending || 0));
         team.differenceArmed = null;
         if (!target || amount <= 0) return null;
+        if (isTeamProtectedBySafe(target)) {
+          logEvent(target.name + " bloqueó Diferencia de " + team.name + " por estar en casilla SEGURO.");
+          return { target:target, amount:0, blocked:true, html:'<b>Seguro:</b> ' + esc(target.name) + ' está protegido y bloqueó la ayuda <b>Diferencia</b>. ' };
+        }
         ensureTeamHelpDefaults(target);
         target.differenceEffects = target.differenceEffects || [];
         target.differenceEffects.push({ source: team.name, amount: amount });
@@ -6221,9 +6265,15 @@ function showWalkAway(prize, safeStep, safeMoney){
       function applyPendingDifferenceBeforeQuestion(team){
         ensureTeamHelpDefaults(team);
         const effects = (team.differenceEffects || []).filter(function(e){ return e && Number(e.amount || 0) > 0; });
-        if (!effects.length) return { applied:false, zero:false, html:"", adjusted:Math.max(0, Number(st.pending || 0)) };
+        if (!effects.length) return { applied:false, zero:false, protected:false, html:"", adjusted:Math.max(0, Number(st.pending || 0)) };
         team.differenceEffects = [];
         const original = Math.max(0, Number(st.pending || 0));
+        if (isTeamProtectedBySafe(team)) {
+          const sources = effects.map(function(e){ return esc(e.source || "Otro equipo"); }).join(", ");
+          const html = "<b>" + esc(team.name) + " está en Seguro.</b><br>No se aplica la ayuda <b>Diferencia</b> de " + sources + ".<br>El lanzamiento conserva su valor de <b>" + original + "</b>.";
+          logEvent(team.name + " bloqueó " + effects.length + " efecto(s) de Diferencia por estar en casilla SEGURO.");
+          return { applied:true, zero:false, protected:true, html:html, adjusted:original };
+        }
         const totalSub = effects.reduce(function(acc, e){ return acc + Math.max(0, Number(e.amount || 0)); }, 0);
         const adjusted = Math.max(0, original - totalSub);
         st.pending = adjusted;
@@ -6241,7 +6291,7 @@ function showWalkAway(prize, safeStep, safeMoney){
         const diff = applyPendingDifferenceBeforeQuestion(team);
         renderTurn();
         if (!diff.applied) { askQuestion(); return; }
-        showFeedback(null, diff.html, "fa-solid fa-minus", "Diferencia");
+        showFeedback(null, diff.html, diff.protected ? "fa-solid fa-shield-halved" : "fa-solid fa-minus", diff.protected ? "Equipo protegido" : "Diferencia");
         setTimeout(function(){ closeFeedback(); askQuestion(); }, diff.zero ? 3400 : 3000);
       }
 
@@ -6254,6 +6304,11 @@ function showWalkAway(prize, safeStep, safeMoney){
         const target = teams[effect.target];
         const amount = Math.max(0, Number(effect.amount || st.pending || 0));
         if (!target || amount <= 0) { if (done) done(); return; }
+        if (isTeamProtectedBySafe(target)) {
+          showSafeProtectionAlert(target, "Devolver", 2600);
+          setTimeout(function(){ if (done) done(); }, 2700);
+          return;
+        }
         logEvent(team.name + " aplicó Devolver contra " + target.name + " por " + amount + " casillas.");
         showFeedback(null, "<b>Devolver aplicado.</b><br>" + esc(team.name) + " respondió bien. " + esc(target.name) + " se devuelve <b>" + amount + "</b> casillas.", "fa-solid fa-rotate-left", "Devolver");
         setTimeout(function(){
@@ -6265,7 +6320,7 @@ function showWalkAway(prize, safeStep, safeMoney){
       function armStealDie(){
         const team = teams[st.turn];
         if (st.answering || st.rolling || st.ended || !team.helps.stealDie || (team.blockHelpTurns || 0) > 0) return;
-        const targetIdx = chooseSkipTarget(team.id);
+        const targetIdx = chooseSkipTarget(team.id, "¿A qué equipo quieres aplicar Robo de dado?", "Robo de dado");
         if (targetIdx == null) return;
         const target = teams[targetIdx];
         if (!window.confirm("¿Confirmas usar Robo de dado? Esta ayuda se consume para " + team.name + ".\\n\\n" + target.name + " usará solo 1 dado en su próximo lanzamiento.")) return;
@@ -6280,7 +6335,7 @@ function showWalkAway(prize, safeStep, safeMoney){
       function armBlockHelp(){
         const team = teams[st.turn];
         if (st.answering || st.rolling || st.ended || !team.helps.blockHelp || (team.blockHelpTurns || 0) > 0) return;
-        const targetIdx = chooseSkipTarget(team.id);
+        const targetIdx = chooseSkipTarget(team.id, "¿A qué equipo quieres aplicar Bloqueo de ayuda?", "Bloqueo de ayuda");
         if (targetIdx == null) return;
         const target = teams[targetIdx];
         if (!window.confirm("¿Confirmas usar Bloqueo de ayuda? Esta ayuda se consume para " + team.name + ".\\n\\n" + target.name + " no podrá usar ayudas en su próximo turno.")) return;
@@ -6343,6 +6398,11 @@ function showWalkAway(prize, safeStep, safeMoney){
         st.cede = null;
 
         function finishTurnReady(){
+          const readyTeam = teams[st.turn];
+          if (readyTeam && isTeamProtectedBySafe(readyTeam) && (readyTeam.blockHelpTurns || 0) > 0) {
+            readyTeam.blockHelpTurns = Math.max(0, (readyTeam.blockHelpTurns || 0) - 1);
+            logEvent(readyTeam.name + " bloqueó Bloqueo de ayuda por estar en casilla SEGURO.");
+          }
           updateQuestionState("Turno listo para tirar dados");
           $("qText").textContent = st.ended ? "Partida terminada." : "Lanza los dados. El avance se mostrará con el color del equipo en el recorrido.";
           setQuestionTitle(st.ended ? "Partida terminada" : "Elige una ayuda disponible");
@@ -6361,6 +6421,12 @@ function showWalkAway(prize, safeStep, safeMoney){
               target.skipTurns = Math.max(0, (target.skipTurns || 0) - 1);
               target.skipSources = target.skipSources || [];
               const sourceName = target.skipSources.length ? target.skipSources.shift() : "Otro equipo";
+              if (isTeamProtectedBySafe(target)) {
+                logEvent(target.name + " bloqueó Perder turno de " + sourceName + " por estar en casilla SEGURO.");
+                finishTurnReady();
+                showSafeProtectionAlert(target, "Perder turno", 2800);
+                return;
+              }
               const continueTeam = teams[(st.turn + 1) % teams.length];
               const remaining = target.skipTurns || 0;
               const msg = sourceName + " le quitó un turno a " + target.name + ". " + (remaining > 0 ? "Faltan " + remaining + " turno(s) para continuar. " : "Ya podrá jugar en su próxima ronda. ") + "Continúa " + continueTeam.name + ".";
@@ -6462,7 +6528,7 @@ function showWalkAway(prize, safeStep, safeMoney){
           setTimeout(function(){ closeFeedback(); askLandingChallenge(team, amount || st.pending); }, 1600);
           return;
         }
-        if (typ === "safe") baseMsg += "<br><b>Casilla SEGURO:</b> quedas protegido de retrocesos por penalización.";
+        if (typ === "safe") baseMsg += "<br><b>Casilla SEGURO:</b> quedas protegido de ayudas ofensivas y daños aplicados por otros equipos mientras permanezcas aquí.";
         showAndEnd(true, baseMsg, 2400);
       }
       function submitAnswer(byTimer){
@@ -7135,7 +7201,14 @@ function showWalkAway(prize, safeStep, safeMoney){
         }
         const faltaMeta = Math.max(0, boardSize - (team.pos || 0));
         const cercaMeta = faltaMeta > 0 && faltaMeta <= 6;
-        const roboActivo = (team.stolenDieTurns || 0) > 0;
+        let roboActivo = (team.stolenDieTurns || 0) > 0;
+        if (roboActivo && isTeamProtectedBySafe(team)) {
+          team.stolenDieTurns = Math.max(0, (team.stolenDieTurns || 0) - 1);
+          $("btnRoll").disabled = true;
+          showSafeProtectionAlert(team, "Robo de dado", 2500);
+          setTimeout(function(){ $("btnRoll").disabled = false; roll(); }, 2600);
+          return;
+        }
         const usarUnDado = cercaMeta || roboActivo;
         if (roboActivo) team.stolenDieTurns = Math.max(0, (team.stolenDieTurns || 0) - 1);
         st.oneDieThisTurn = usarUnDado;
